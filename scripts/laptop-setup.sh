@@ -51,6 +51,19 @@ else
   todo "link WhatsApp: cd assistant && node whatsapp.js $PROFILE   (scan the QR, then Ctrl-C)"
 fi
 
+# MCP servers (email/calendar/browser) — auto-enable from the template
+if [ -f "$REPO_DIR/assistant/profiles/$PROFILE/mcp.json" ]; then
+  ok "mcp.json present (email/calendar/browser servers enabled)"
+elif [ -f "$REPO_DIR/assistant/profiles/$PROFILE/mcp.json.example" ]; then
+  cp "$REPO_DIR/assistant/profiles/$PROFILE/mcp.json.example" \
+     "$REPO_DIR/assistant/profiles/$PROFILE/mcp.json"
+  ok "created mcp.json from template — gmail/gcal/ms365/browser servers enabled"
+  echo "  INFO first use of each service triggers its one-time sign-in;"
+  echo "       for Outlook just tell the assistant: 'log into my microsoft account'"
+  echo "       and it will hand you a device code. Edit mcp.json to remove servers"
+  echo "       you don't want (and fix the EDIT_ME browser profile path)."
+fi
+
 # Telegram token (optional channel)
 if [ -f "$REPO_DIR/assistant/.env" ] && grep -q "TELEGRAM_BOT_TOKEN" "$REPO_DIR/assistant/.env" 2>/dev/null; then
   ok "Telegram token present (.env)"

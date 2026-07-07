@@ -95,7 +95,11 @@ async function start() {
   });
   sock.ev.on('creds.update', saveCreds);
 
+  // WhatsApp can address the self ("Message Yourself") chat by phone-number
+  // jid OR by LID alias depending on account age/privacy settings — accept
+  // both, or Alfred goes silent for LID-routed accounts.
   let selfJid = null;
+  const selfIds = new Set();
   const sendTo = (jid, text) =>
     sock.sendMessage(jid, { text: `${PREFIX} ${text && text.trim() ? text : '(no response)'}` });
 
@@ -106,7 +110,9 @@ async function start() {
     }
     if (u.connection === 'open') {
       selfJid = jidNormalizedUser(sock.user.id);
-      log(`linked as ${selfJid} — message yourself on WhatsApp to talk to the agent`);
+      selfIds.add(selfJid);
+      if (sock.user.lid) selfIds.add(jidNormalizedUser(sock.user.lid));
+      log(`linked as ${[...selfIds].join(' / ')} — message yourself on WhatsApp to talk to the agent`);
       if (!schedulerStarted) {
         schedulerStarted = true;
         startScheduler({
@@ -147,9 +153,9 @@ async function start() {
       const jid = m.key && m.key.remoteJid;
       if (!jid || jid.endsWith('@g.us') || jid === 'status@broadcast') continue; // DMs only
       const text = extractText(m);
+      const isSelfChat = selfIds.has(jidNormalizedUser(jid));
+      log(`inbound: jid=${jid} fromMe=${!!m.key.fromMe} selfChat=${isSelfChat} text="${text.slice(0, 40)}"`);
       if (!text || text.startsWith(PREFIX)) continue; // empty, or our own reply
-
-      const isSelfChat = selfJid && jid === selfJid;
       if (isSelfChat) {
         if (wa.selfChat === false) continue;
       } else {

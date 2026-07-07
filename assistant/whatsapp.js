@@ -29,7 +29,14 @@ try {
   console.error('Missing dependencies. Run:  cd assistant && npm install');
   process.exit(1);
 }
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, jidNormalizedUser } = baileys;
+const {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  DisconnectReason,
+  jidNormalizedUser,
+  Browsers,
+} = baileys;
 
 const { profile, profileDir, profileName } = loadProfile(__dirname, process.argv[2]);
 const log = makeLog(`${profileName}:wa`);
@@ -72,7 +79,16 @@ async function start() {
   const { state, saveCreds } = await useMultiFileAuthState(
     path.join(profileDir, 'state', 'whatsapp-auth')
   );
-  const sock = makeWASocket({ auth: state, syncFullHistory: false });
+  // Negotiate the current WhatsApp Web protocol version — connecting with a
+  // stale hardcoded version is the classic cause of instant 405 failures.
+  const { version } = await fetchLatestBaileysVersion();
+  log(`using WhatsApp Web protocol v${version.join('.')}`);
+  const sock = makeWASocket({
+    auth: state,
+    version,
+    browser: Browsers.macOS('Desktop'),
+    syncFullHistory: false,
+  });
   sock.ev.on('creds.update', saveCreds);
 
   let selfJid = null;
@@ -105,13 +121,18 @@ async function start() {
       }
     }
     if (u.connection === 'close') {
-      const code = u.lastDisconnect && u.lastDisconnect.error
-        && u.lastDisconnect.error.output && u.lastDisconnect.error.output.statusCode;
+      const err = u.lastDisconnect && u.lastDisconnect.error;
+      const code = err && err.output && err.output.statusCode;
       if (code === DisconnectReason.loggedOut) {
         log('logged out — delete profiles/' + profileName + '/state/whatsapp-auth and re-link');
         process.exit(1);
       }
-      log(`connection closed (${code || 'unknown'}), reconnecting in 3s...`);
+      log(`connection closed (status ${code || 'unknown'}): ${err ? err.message : 'no error detail'}`);
+      if (code === 405 || code === 403) {
+        log('HINT: a 405/403 here usually means the Baileys library is outdated for');
+        log('WhatsApp\'s current protocol — run "npm update" in assistant/ and retry.');
+      }
+      log('reconnecting in 3s...');
       setTimeout(() => start().catch((e) => log('reconnect failed:', e.message)), 3000);
     }
   });

@@ -85,7 +85,7 @@ async function start() {
   log(`using WhatsApp Web protocol v${version.join('.')}`);
   // Quiet Baileys' internal JSON debug logging; our own log lines remain.
   let logger;
-  try { logger = require('pino')({ level: 'error' }); } catch { /* default logger */ }
+  try { logger = require('pino')({ level: 'silent' }); } catch { /* default logger */ }
   const sock = makeWASocket({
     auth: state,
     version,
@@ -100,6 +100,13 @@ async function start() {
   // both, or Alfred goes silent for LID-routed accounts.
   let selfJid = null;
   const selfIds = new Set();
+  // The LID alias is only populated on sock.user shortly AFTER the
+  // connection opens, so re-collect identities whenever we need them.
+  const refreshSelfIds = () => {
+    if (!sock.user) return;
+    if (sock.user.id) selfIds.add(jidNormalizedUser(sock.user.id));
+    if (sock.user.lid) selfIds.add(jidNormalizedUser(sock.user.lid));
+  };
   const sendTo = (jid, text) =>
     sock.sendMessage(jid, { text: `${PREFIX} ${text && text.trim() ? text : '(no response)'}` });
 
@@ -110,8 +117,7 @@ async function start() {
     }
     if (u.connection === 'open') {
       selfJid = jidNormalizedUser(sock.user.id);
-      selfIds.add(selfJid);
-      if (sock.user.lid) selfIds.add(jidNormalizedUser(sock.user.lid));
+      refreshSelfIds();
       log(`linked as ${[...selfIds].join(' / ')} — message yourself on WhatsApp to talk to the agent`);
       if (!schedulerStarted) {
         schedulerStarted = true;
@@ -149,6 +155,7 @@ async function start() {
 
   sock.ev.on('messages.upsert', ({ messages, type }) => {
     if (type !== 'notify') return;
+    refreshSelfIds();
     for (const m of messages) {
       const jid = m.key && m.key.remoteJid;
       if (!jid || jid.endsWith('@g.us') || jid === 'status@broadcast') continue; // DMs only

@@ -1,7 +1,7 @@
 {
   "agents": {
     "defaults": {
-      "model": { "primary": "anthropic/claude-sonnet-5" },
+      "model": { "primary": "anthropic/claude-opus-4-8" },
       "models": {
         "anthropic/claude-sonnet-5": {
           "agentRuntime": { "id": "claude-cli" }

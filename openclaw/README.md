@@ -88,28 +88,26 @@ stuff.
 
 ## Cost / sub limits (read this one)
 
-Since mid-2026, Anthropic meters programmatic use (OpenClaw, `claude -p`,
-Agent SDK) through a dedicated **Agent SDK credit** pool included in paid
-subs — roughly $20/month worth on Pro, $100 on Max 5x — separate from your
-normal chat/Claude Code limits. When the pool runs out, agents stop
-responding until it resets (or you enable pay-as-you-go extra usage).
+Status July 2026: Anthropic announced, then **paused**, a plan to meter
+programmatic use (OpenClaw, `claude -p`, Agent SDK) through a separate
+"Agent SDK credit" pool. **Right now agents draw from your normal
+subscription limits, same as Claude Code in a terminal.** On Max 20x
+that's a lot of headroom; the example config defaults to Opus.
 
-Ballpark, per ~$20 pool (typical message = persona + memory context):
-Opus ≈ 75 messages/month, Sonnet ≈ 380, Haiku ≈ 1,100. The template
-defaults to Sonnet — strong enough to be a real PA, cheap enough to text
-all day. The pool resets monthly, and extra usage (if you enable it) has a
-spending cap you set, so worst case is a few dollars, never a runaway bill.
+If/when the pool change lands (Anthropic says advance notice first):
+Pro ≈ $20/mo of agent credits, Max 5x ≈ $100, Max 20x ≈ $200. At API
+rates that's roughly — Opus ≈ 800 messages/mo on Max 20x, Sonnet ≈ 4,000,
+Haiku ≈ 11,000. Still plenty for a personal assistant + light family use;
+revisit the tips below if it ever feels tight.
 
-Making it last with three people:
+Stretching usage with three people:
 
-- Family agents on `anthropic/claude-haiku-4-5` (already registered in the
-  example config) — ~10x more messages per credit. Save Opus for moments
-  that need it, not the default.
-- Heartbeats cost credits every poll: widen the interval, and only enable
+- Family agents on `anthropic/claude-haiku-4-5` or Sonnet (both registered
+  in the example config) — 5-10x more messages per token than Opus.
+- Heartbeats run the agent every poll: widen the interval, and only enable
   HEARTBEAT.md for people who actually want proactive check-ins.
 - Long conversations resend context each message — `/new` or fresh topics
   keep costs down.
-- If everyone uses it daily, a Max plan's bigger pool is the honest answer.
 
 ## Security (important)
 

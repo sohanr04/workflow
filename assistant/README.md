@@ -192,6 +192,44 @@ their own with their own accounts. Browser + purchases: Alfred is
 instructed to never buy/submit anything without an explicit go-ahead —
 keep it that way.
 
+## Giving the assistant access to your accounts
+
+Three doors, in order of preference:
+
+**1. Real APIs (Gmail, Google Calendar, work Outlook).** One-time OAuth
+per service, on the laptop: the `gmail` and `gcal` servers walk you
+through a Google sign-in on first run (see each package's README);
+`ms365` uses a Microsoft device-code login for Outlook/Teams/OneDrive.
+Tokens live on the laptop, scoped and revocable from your
+Google/Microsoft account pages. Delete any server you don't use.
+
+**2. Logged-in browser sessions (Uber, food delivery, anything without
+an API).** The `playwright` server keeps ONE persistent browser profile
+(`--user-data-dir`, edit the path). To grant a site:
+
+1. Temporarily remove `"--headless"` from mcp.json, restart the channel.
+2. Tell the assistant: "open uber.com so I can log in" — a real browser
+   window opens on the laptop.
+3. Log in yourself (password, 2FA, all of it). Repeat for other sites.
+4. Put `"--headless"` back, restart. The sessions persist; the assistant
+   can now check prices, request rides, track orders in those accounts.
+
+**3. Passwords — don't.** Never paste passwords into chat or memory
+files. The assistant doesn't need them: APIs use OAuth tokens, websites
+use the browser sessions you logged into yourself. Anything that
+insists on a password in plaintext should stay manual (or use a
+password-manager CLI like 1Password's `op` — advanced, optional).
+
+Safety rails that keep this sane:
+
+- The persona forbids purchases/submissions without your explicit
+  go-ahead — but the browser CAN act on logged-in sites, so only log in
+  accounts you're comfortable with. Start with low-stakes ones.
+- Keep payment confirmation prompts ON in those accounts (Uber PIN,
+  card CVV re-entry) so a misfire can't spend money silently.
+- The browser profile dir is as sensitive as your laptop login. Full
+  disk encryption is a good idea if the laptop lives in a shared space.
+
 ## Ideas for later
 
 - Voice notes: transcribe Telegram voice messages before handing to Claude.

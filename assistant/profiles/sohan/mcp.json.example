@@ -8,9 +8,19 @@
       "command": "npx",
       "args": ["-y", "@cocal/google-calendar-mcp"]
     },
+    "ms365": {
+      "command": "npx",
+      "args": ["-y", "@softeria/ms-365-mcp-server"]
+    },
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest", "--headless"]
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--headless",
+        "--user-data-dir",
+        "/home/EDIT_ME/.alfred-browser"
+      ]
     }
   }
 }

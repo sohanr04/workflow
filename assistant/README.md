@@ -214,11 +214,29 @@ an API).** The `playwright` server keeps ONE persistent browser profile
 4. Put `"--headless"` back, restart. The sessions persist; the assistant
    can now check prices, request rides, track orders in those accounts.
 
-**3. Passwords — don't.** Never paste passwords into chat or memory
-files. The assistant doesn't need them: APIs use OAuth tokens, websites
-use the browser sessions you logged into yourself. Anything that
-insists on a password in plaintext should stay manual (or use a
-password-manager CLI like 1Password's `op` — advanced, optional).
+**3. Passwords — the vault pattern.** Never paste passwords into chat
+(chat history is forever). If the assistant genuinely needs credentials,
+give it a password manager instead:
+
+1. Install a vault CLI on the laptop: Bitwarden (`npm i -g @bitwarden/cli`,
+   free) or 1Password CLI (`op`).
+2. Create a **dedicated vault/collection** just for the assistant. Put in
+   only what you'd hand a human assistant — streaming logins, loyalty
+   accounts, the food-delivery password. NOT banking, NOT your main email
+   password, NOT anything with your money or identity behind it.
+3. Log the CLI in once (`bw login` + `bw unlock`, session key in `.env`).
+4. Allow the tool in `profile.json`:
+   `"allowedTools": [..., "Bash(bw:*)"]` (or `"Bash(op:*)"`).
+5. The persona has hard rules: fetch a secret only at the moment of use,
+   never write it to any file, never repeat it in chat.
+
+Honest limits — know what this does and doesn't protect: the secret still
+passes through the model's context and the local session transcript
+(`~/.claude`) when used, and an agent that can read the vault can be
+tricked in ways a human can't always be. That's why the dedicated
+low-stakes vault matters: the blast radius of the worst case is "someone
+ordered pizza", not "someone moved money". Anything irreversible stays on
+OAuth, browser sessions you logged into yourself, or manual.
 
 Safety rails that keep this sane:
 

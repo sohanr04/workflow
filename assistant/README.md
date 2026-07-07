@@ -93,11 +93,13 @@ Per-person knobs in `profile.json`:
 
 ## Notes on your Claude sub
 
-- Everything runs through Claude Code's login, so usage counts against your
-  subscription's rolling limits. Three light users is normally fine; if you
-  hit limits, point the family profiles at a smaller `model`.
-- Long conversations cost more each message (full context is resent). Use
-  `/new` to reset when switching topics — cheaper and often better answers.
+- This gateway uses `claude -p` (non-interactive), which since mid-2026
+  draws from your subscription's **Agent SDK credit** pool (~$20/mo worth
+  on Pro, ~$100 on Max 5x) — separate from your normal chat limits. When
+  it's exhausted, the assistant stops until the pool resets.
+- Stretch it: set `"model": "claude-haiku-4-5"` in family profiles, keep
+  scheduled prompts few, and use `/new` to reset long conversations (full
+  context is resent every message).
 
 ## Privacy
 

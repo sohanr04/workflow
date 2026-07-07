@@ -68,11 +68,24 @@ stuff.
   setup"). Browse skills: `openclaw skills list`. Email/Gmail hookup is an
   OpenClaw skill too — ask your agent to walk you through connecting it.
 
-## Cost / sub limits
+## Cost / sub limits (read this one)
 
-All three agents burn the same Claude subscription (via `claude -p` under
-the hood, same as Claude Code). If you hit rolling limits, give brother/dad
-a cheaper model in their agent config and keep the flagship for yours.
+Since mid-2026, Anthropic meters programmatic use (OpenClaw, `claude -p`,
+Agent SDK) through a dedicated **Agent SDK credit** pool included in paid
+subs — roughly $20/month worth on Pro, $100 on Max 5x — separate from your
+normal chat/Claude Code limits. When the pool runs out, agents stop
+responding until it resets (or you enable pay-as-you-go extra usage).
+
+Making it last with three people:
+
+- Put brother/dad's agents on a cheap model (e.g. `anthropic/claude-haiku-4-5`
+  with the same claude-cli runtime) — ~10x more messages per credit. Keep
+  the flagship for the agent you use hardest.
+- Heartbeats cost credits every poll: widen the interval, and only enable
+  HEARTBEAT.md for people who actually want proactive check-ins.
+- Long conversations resend context each message — `/new` or fresh topics
+  keep costs down.
+- If everyone uses it daily, a Max plan's bigger pool is the honest answer.
 
 ## Security (important)
 

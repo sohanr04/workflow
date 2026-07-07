@@ -12,7 +12,8 @@
     "Grep",
     "WebSearch",
     "WebFetch",
-    "TodoWrite"
+    "TodoWrite",
+    "Task"
   ],
   "timeoutSeconds": 300,
   "whatsapp": {
@@ -33,7 +34,7 @@
     {
       "time": "18:00",
       "days": ["sun"],
-      "prompt": "Sunday review, delivered as Alfred. Read memory/goals.md and memory/notes.md. An honest week-in-review: what actually moved vs his goals, what stalled and the real reason (delivered with dry precision, not cruelty), commitments kept vs broken, and 3 concrete targets for next week. Update notes.md with those targets. Close with one question he should sit with, and one line of genuine encouragement — Alfred believes in him, which is why the standards are high."
+      "prompt": "Sunday review, delivered as Alfred. Read memory/goals.md, memory/notes.md, and this week's memory/journal/ entries. An honest week-in-review: what actually moved vs his goals, what stalled and the real reason (delivered with dry precision, not cruelty), commitments kept vs broken, and 3 concrete targets for next week. Then CONSOLIDATE memory: promote lasting facts from the journal into about-me.md or people files, update goal progress in goals.md, prune notes.md of dead items. Close with one question he should sit with, and one line of genuine encouragement — Alfred believes in him, which is why the standards are high."
     }
   ]
 }

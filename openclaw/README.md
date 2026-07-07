@@ -76,11 +76,17 @@ subs — roughly $20/month worth on Pro, $100 on Max 5x — separate from your
 normal chat/Claude Code limits. When the pool runs out, agents stop
 responding until it resets (or you enable pay-as-you-go extra usage).
 
+Ballpark, per ~$20 pool (typical message = persona + memory context):
+Opus ≈ 75 messages/month, Sonnet ≈ 380, Haiku ≈ 1,100. The template
+defaults to Sonnet — strong enough to be a real PA, cheap enough to text
+all day. The pool resets monthly, and extra usage (if you enable it) has a
+spending cap you set, so worst case is a few dollars, never a runaway bill.
+
 Making it last with three people:
 
-- Put brother/dad's agents on a cheap model (e.g. `anthropic/claude-haiku-4-5`
-  with the same claude-cli runtime) — ~10x more messages per credit. Keep
-  the flagship for the agent you use hardest.
+- Family agents on `anthropic/claude-haiku-4-5` (already registered in the
+  example config) — ~10x more messages per credit. Save Opus for moments
+  that need it, not the default.
 - Heartbeats cost credits every poll: widen the interval, and only enable
   HEARTBEAT.md for people who actually want proactive check-ins.
 - Long conversations resend context each message — `/new` or fresh topics

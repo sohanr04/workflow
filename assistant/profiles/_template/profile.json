@@ -3,6 +3,7 @@
   "botTokenEnv": "TELEGRAM_BOT_TOKEN_NAME_HERE",
   "allowedUserIds": [],
   "permissionMode": "acceptEdits",
+  "model": "claude-haiku-4-5",
   "allowedTools": [
     "Read",
     "Write",

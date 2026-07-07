@@ -3,6 +3,7 @@
   "botTokenEnv": "TELEGRAM_BOT_TOKEN_SOHAN",
   "allowedUserIds": [],
   "permissionMode": "acceptEdits",
+  "model": "claude-sonnet-5",
   "allowedTools": [
     "Read",
     "Write",

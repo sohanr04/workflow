@@ -15,6 +15,11 @@
     "TodoWrite"
   ],
   "timeoutSeconds": 300,
+  "whatsapp": {
+    "selfChat": true,
+    "allowFrom": [],
+    "replyPrefix": "🤖"
+  },
   "scheduled": [
     {
       "time": "07:30",

@@ -1,21 +1,26 @@
-# Family Assistant
+# Your Own Agent
 
-Personal AI assistants over Telegram, one per person, powered by your Claude
-subscription (via Claude Code headless — no API key, no per-token billing).
-Runs on any always-on machine, like an old laptop.
+Personal AI assistants on **Telegram and WhatsApp (your own number)**, one
+per person, powered by your Claude subscription (via Claude Code headless —
+no API key, no per-token billing). Runs on any always-on machine, like an
+old laptop. This is your code — small enough to read in one sitting.
 
 ```
-Telegram bot (one per person)
-      │
-gateway.js  (tiny Node daemon, zero dependencies)
-      │
-claude -p   (Claude Code CLI, logged into your sub)
-      │
-profiles/<person>/   persona (CLAUDE.md) + memory (markdown files)
+Telegram bot (one per person)      Your WhatsApp number (self-chat)
+      │                                   │
+  gateway.js                         whatsapp.js
+      └────────────┬──────────────────────┘
+              lib/core.js   (Claude runner, sessions, reminders, schedules)
+                   │
+              claude -p     (Claude Code CLI, logged into your sub)
+                   │
+         profiles/<person>/   persona (CLAUDE.md) + memory (markdown files)
 ```
 
-Each person gets their own bot, their own personality, and their own private
-memory. The assistant updates its memory files itself as it learns things.
+Each person gets their own channel, personality, and private memory. The
+assistant updates its memory files itself as it learns things. Design
+patterns (self-chat loop guard, allowlists, reconnect handling) are borrowed
+from OpenClaw's source, vendored at `../vendor/openclaw` as a reference.
 
 ## Laptop setup (once)
 
@@ -49,6 +54,37 @@ memory. The assistant updates its memory files itself as it learns things.
 5. **Make it yours**: edit `profiles/sohan/CLAUDE.md` (personality) and
    `profiles/sohan/memory/about-me.md` (facts about you). The assistant
    keeps memory updated on its own from there.
+
+## WhatsApp on your own number
+
+Your agent links to your WhatsApp account as a device (same mechanism as
+WhatsApp Web) and you talk to it in WhatsApp's **"Message Yourself"** chat.
+
+```bash
+cd assistant
+npm install            # one-time: WhatsApp needs the Baileys library
+node whatsapp.js sohan
+```
+
+A QR code prints in the terminal — scan it from your phone: **WhatsApp →
+Settings → Linked devices → Link a device**. Then open the "Message
+Yourself" chat and say hi. Agent replies arrive prefixed with 🤖 (that
+prefix is also the loop guard — don't remove it).
+
+Config lives in `profile.json` under `"whatsapp"`:
+
+- `selfChat` — talk to the agent in your own chat (default true)
+- `allowFrom` — other numbers (E.164, e.g. `"+15551234567"`) allowed to
+  message the agent directly. Everyone else is ignored, and the agent
+  NEVER replies in your other chats or to messages you send to people.
+- `replyPrefix` — the reply marker (default 🤖)
+
+Know before you link: this rides the WhatsApp Web protocol unofficially
+(against WhatsApp ToS; self-chat use rarely gets flagged, but not never —
+use a spare SIM if losing your number would hurt), and the laptop must
+stay online for replies. Telegram and WhatsApp channels run side by side
+fine — same persona, memory, and reminders, separate conversation
+sessions.
 
 ## Add your brother / dad
 

@@ -1,0 +1,20 @@
+# WhatsApp channel for one profile: systemctl enable --now assistant-wa@sohan
+# Link the QR interactively FIRST (node whatsapp.js sohan), then enable this.
+# Logs: journalctl -u assistant-wa@sohan -f
+
+[Unit]
+Description=Personal assistant WhatsApp channel (%i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# EDIT ME: absolute path to the assistant/ directory in your clone
+WorkingDirectory=/home/EDIT_ME/workflow/assistant
+ExecStart=/usr/bin/env node whatsapp.js %i
+# EDIT ME: the user you ran `claude login` and `npm install` as (NOT root)
+User=EDIT_ME
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

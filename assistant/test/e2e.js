@@ -30,6 +30,7 @@ fs.copyFileSync(
   path.join(__dirname, '..', 'gateway.js'),
   path.join(assistantDir, 'gateway.js')
 );
+fs.cpSync(path.join(__dirname, '..', 'lib'), path.join(assistantDir, 'lib'), { recursive: true });
 
 const fakeClaude = path.join(tmp, 'fake-claude');
 fs.writeFileSync(

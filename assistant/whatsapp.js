@@ -1,0 +1,154 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * WhatsApp channel: your own number <-> Claude Code (headless).
+ *
+ * Links to your WhatsApp account as a device (same mechanism as WhatsApp
+ * Web) via QR code. You talk to your agent in WhatsApp's "Message
+ * Yourself" chat; optionally allowlist other numbers too.
+ *
+ *   npm install            (once, in assistant/)
+ *   node whatsapp.js <profile>
+ *
+ * profile.json options (under "whatsapp"):
+ *   selfChat    — reply in your own Message Yourself chat (default true)
+ *   allowFrom   — other numbers allowed to talk to the agent, E.164
+ *   replyPrefix — marker on agent replies, also the self-loop guard
+ */
+
+const path = require('path');
+const { loadProfile, makeLog, createClaude, startScheduler } = require('./lib/core');
+
+let baileys;
+let qrcode;
+try {
+  baileys = require('@whiskeysockets/baileys');
+  qrcode = require('qrcode-terminal');
+} catch {
+  console.error('Missing dependencies. Run:  cd assistant && npm install');
+  process.exit(1);
+}
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, jidNormalizedUser } = baileys;
+
+const { profile, profileDir, profileName } = loadProfile(__dirname, process.argv[2]);
+const log = makeLog(`${profileName}:wa`);
+const wa = profile.whatsapp || {};
+
+// The prefix marks agent replies. It doubles as the loop guard: in the
+// self-chat every message is "from me", so the agent must never respond to
+// messages carrying its own prefix.
+const PREFIX = wa.replyPrefix || '🤖';
+const digits = (s) => String(s || '').replace(/\D/g, '');
+const allowFrom = (wa.allowFrom || []).map(digits);
+
+const claude = createClaude({
+  profile,
+  profileDir,
+  sessionsFileName: 'sessions-whatsapp.json',
+  log,
+});
+
+// One message at a time per chat; extras queue in order.
+const queues = new Map();
+function enqueue(key, fn) {
+  const prev = queues.get(key) || Promise.resolve();
+  queues.set(key, prev.then(fn).catch((e) => log('handler error:', e.message)));
+}
+
+function extractText(m) {
+  const msg = m.message || {};
+  return (
+    msg.conversation ||
+    (msg.extendedTextMessage && msg.extendedTextMessage.text) ||
+    (msg.imageMessage && msg.imageMessage.caption) ||
+    ''
+  ).trim();
+}
+
+let schedulerStarted = false;
+
+async function start() {
+  const { state, saveCreds } = await useMultiFileAuthState(
+    path.join(profileDir, 'state', 'whatsapp-auth')
+  );
+  const sock = makeWASocket({ auth: state, syncFullHistory: false });
+  sock.ev.on('creds.update', saveCreds);
+
+  let selfJid = null;
+  const sendTo = (jid, text) =>
+    sock.sendMessage(jid, { text: `${PREFIX} ${text && text.trim() ? text : '(no response)'}` });
+
+  sock.ev.on('connection.update', (u) => {
+    if (u.qr) {
+      log('Link this device: WhatsApp → Settings → Linked devices → Link a device');
+      qrcode.generate(u.qr, { small: true });
+    }
+    if (u.connection === 'open') {
+      selfJid = jidNormalizedUser(sock.user.id);
+      log(`linked as ${selfJid} — message yourself on WhatsApp to talk to the agent`);
+      if (!schedulerStarted) {
+        schedulerStarted = true;
+        startScheduler({
+          profile,
+          profileDir,
+          log,
+          sendToOwner: (text) => selfJid && sendTo(selfJid, text),
+          runScheduled: (prompt) => {
+            if (!selfJid) return;
+            enqueue(selfJid, async () => {
+              const res = await claude.runClaude(prompt, undefined);
+              await sendTo(selfJid, res.ok ? res.text : `Scheduled task failed: ${res.error}`);
+            });
+          },
+        });
+      }
+    }
+    if (u.connection === 'close') {
+      const code = u.lastDisconnect && u.lastDisconnect.error
+        && u.lastDisconnect.error.output && u.lastDisconnect.error.output.statusCode;
+      if (code === DisconnectReason.loggedOut) {
+        log('logged out — delete profiles/' + profileName + '/state/whatsapp-auth and re-link');
+        process.exit(1);
+      }
+      log(`connection closed (${code || 'unknown'}), reconnecting in 3s...`);
+      setTimeout(() => start().catch((e) => log('reconnect failed:', e.message)), 3000);
+    }
+  });
+
+  sock.ev.on('messages.upsert', ({ messages, type }) => {
+    if (type !== 'notify') return;
+    for (const m of messages) {
+      const jid = m.key && m.key.remoteJid;
+      if (!jid || jid.endsWith('@g.us') || jid === 'status@broadcast') continue; // DMs only
+      const text = extractText(m);
+      if (!text || text.startsWith(PREFIX)) continue; // empty, or our own reply
+
+      const isSelfChat = selfJid && jid === selfJid;
+      if (isSelfChat) {
+        if (wa.selfChat === false) continue;
+      } else {
+        // Never answer on your behalf in other people's chats: messages YOU
+        // send to others are ignored, and inbound senders need allowlisting.
+        if (m.key.fromMe) continue;
+        if (!allowFrom.includes(digits(jid.split('@')[0]))) continue;
+      }
+
+      enqueue(jid, async () => {
+        if (text === '/new') {
+          claude.resetSession(jid);
+          await sendTo(jid, 'Fresh start — what’s up?');
+          return;
+        }
+        await sock.sendPresenceUpdate('composing', jid).catch(() => {});
+        const res = await claude.ask(jid, text);
+        await sendTo(jid, res.ok ? res.text : `Something went wrong: ${res.error}`);
+      });
+    }
+  });
+}
+
+start().catch((e) => {
+  console.error('fatal:', e);
+  process.exit(1);
+});

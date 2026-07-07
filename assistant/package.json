@@ -1,0 +1,14 @@
+{
+  "name": "family-assistant",
+  "private": true,
+  "description": "Personal AI assistants over Telegram + WhatsApp, powered by Claude Code headless",
+  "scripts": {
+    "telegram": "node gateway.js",
+    "whatsapp": "node whatsapp.js",
+    "test": "node test/e2e.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.0",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

@@ -3,6 +3,14 @@
     "gmail": {
       "command": "npx",
       "args": ["-y", "@gongrzhe/server-gmail-autoauth-mcp"]
+    },
+    "gcal": {
+      "command": "npx",
+      "args": ["-y", "@cocal/google-calendar-mcp"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--headless"]
     }
   }
 }

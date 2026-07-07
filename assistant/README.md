@@ -164,20 +164,33 @@ a Sunday 18:00 weekly review — edit times/prompts to taste, or add your own:
 Omit `"days"` for every day. Each run is a fresh session with full persona +
 memory. **Adjust the times to your timezone** — they use the laptop's clock.
 
-## Email (Gmail via MCP)
+## The full stack (email, calendar, browser — via MCP)
 
-The assistant can read/summarize your inbox and write drafts (it's told to
-never send — you hit send yourself):
+Sohan's profile is set up as "Alfred" — persona in `CLAUDE.md` — with the
+overpowered loadout: files + web search (built into Claude Code) plus three
+MCP servers:
 
-1. `cp profiles/sohan/mcp.json.example profiles/sohan/mcp.json`
-2. The example uses a community Gmail MCP server
-   (`@gongrzhe/server-gmail-autoauth-mcp`) which needs a Google Cloud OAuth
-   credential — follow that project's README for the one-time auth flow. Any
-   Gmail MCP server works; whatever is in `mcp.json` gets auto-enabled.
-3. Restart the gateway. It logs `mcp servers enabled: gmail` on startup.
+| Server | Gives Alfred | Package |
+|---|---|---|
+| `gmail` | inbox summaries, search, drafts (never sends) | `@gongrzhe/server-gmail-autoauth-mcp` |
+| `gcal` | sees your calendar, flags collisions | `@cocal/google-calendar-mcp` |
+| `playwright` | drives a real browser: research, forms, price checks | `@playwright/mcp` |
 
-`mcp.json` is git-ignored (it's personal). Each family member can have their
-own with their own accounts.
+Enable them:
+
+1. `cp profiles/sohan/mcp.json.example profiles/sohan/mcp.json` — whatever
+   is in `mcp.json` gets auto-enabled and allowlisted at startup.
+2. Gmail + Calendar need a one-time Google OAuth setup — follow each
+   project's README (both use a Google Cloud credential). Playwright needs
+   nothing (first run downloads a browser).
+3. Delete any server you don't want from your `mcp.json` — each one adds
+   startup time and tool tokens per message.
+4. Restart the channel. It logs `mcp servers enabled: gmail, gcal, playwright`.
+
+`mcp.json` is git-ignored (it's personal). Each family member can have
+their own with their own accounts. Browser + purchases: Alfred is
+instructed to never buy/submit anything without an explicit go-ahead —
+keep it that way.
 
 ## Ideas for later
 

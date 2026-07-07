@@ -105,7 +105,12 @@ function createClaude({ profile, profileDir, sessionsFileName = 'sessions.json',
         try {
           const data = JSON.parse(out);
           if (data.is_error) {
-            resolve({ ok: false, error: data.result || 'claude returned an error' });
+            let error = data.result || 'claude returned an error';
+            if (/401|invalid.*(auth|api key)|authenticate/i.test(error)) {
+              error += ' — fix on this machine: run `claude` then /login with your ' +
+                'subscription account, and make sure no stale ANTHROPIC_API_KEY env var is set.';
+            }
+            resolve({ ok: false, error });
           } else {
             resolve({ ok: true, text: data.result, sessionId: data.session_id });
           }

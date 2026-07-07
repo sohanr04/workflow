@@ -115,6 +115,22 @@ journalctl -u assistant@sohan -f     # logs
 
 Or quick-and-dirty with pm2: `pm2 start gateway.js --name sohan -- sohan`.
 
+**macOS laptop:** systemd doesn't exist there — use pm2:
+
+```bash
+npm install -g pm2
+cd assistant
+pm2 start whatsapp.js --name alfred -- sohan     # WhatsApp channel
+pm2 start gateway.js  --name alfred-tg -- sohan  # Telegram (optional)
+pm2 save && pm2 startup   # run the sudo command it prints; survives reboots
+pm2 logs alfred           # watch it think
+```
+
+Keep-awake on a MacBook: System Settings → Battery → Options → enable
+"Prevent automatic sleeping when the display is off", keep it plugged in.
+Closing the lid still sleeps the machine — leave it open (screen can be
+off), or use the free Amphetamine app to allow closed-lid operation.
+
 ## Tuning
 
 Per-person knobs in `profile.json`:

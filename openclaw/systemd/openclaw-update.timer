@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly OpenClaw auto-update
+
+[Timer]
+OnCalendar=Sun 04:00
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target

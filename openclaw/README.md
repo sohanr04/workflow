@@ -2,9 +2,27 @@
 
 [OpenClaw](https://github.com/openclaw/openclaw) is the most popular
 open-source personal AI assistant (the gateway that connects Telegram/
-WhatsApp/Discord to an agent). You don't copy its code — you install it as
-a package. **This folder holds the parts that are yours**: the config and
-each person's persona + memory workspace.
+WhatsApp/Discord to an agent). **This folder holds the parts that are
+yours** (config + per-person workspaces); the full OpenClaw source lives in
+[`../vendor/openclaw`](../vendor/openclaw) as a git submodule.
+
+When cloning this repo on the laptop, grab the submodule too:
+
+```bash
+git clone --recurse-submodules <this-repo>
+```
+
+## Staying up to date
+
+`scripts/update-openclaw.sh` pulls the latest OpenClaw source into
+`vendor/openclaw` and updates the running install to match, then restarts
+the gateway. For hands-off weekly updates, install the systemd timer:
+
+```bash
+sudo cp openclaw/systemd/openclaw-update.* /etc/systemd/system/   # edit EDIT_ME first
+sudo systemctl daemon-reload
+sudo systemctl enable --now openclaw-update.timer
+```
 
 Three isolated agents on one laptop, one Claude subscription:
 

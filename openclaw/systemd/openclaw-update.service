@@ -1,0 +1,15 @@
+# Weekly OpenClaw auto-update (paired with openclaw-update.timer).
+# Install:
+#   sudo cp openclaw-update.* /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now openclaw-update.timer
+
+[Unit]
+Description=Update OpenClaw source + install
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# EDIT ME: path to your clone and the user you installed node/openclaw as
+User=EDIT_ME
+ExecStart=/home/EDIT_ME/workflow/scripts/update-openclaw.sh

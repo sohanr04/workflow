@@ -33,11 +33,17 @@
     ]
   },
   "bindings": [
+    { "agentId": "sohan",   "match": { "channel": "whatsapp" } },
     { "agentId": "sohan",   "match": { "channel": "telegram", "accountId": "sohan" } },
     { "agentId": "brother", "match": { "channel": "telegram", "accountId": "brother" } },
     { "agentId": "dad",     "match": { "channel": "telegram", "accountId": "dad" } }
   ],
   "channels": {
+    "whatsapp": {
+      "dmPolicy": "allowlist",
+      "allowFrom": ["+1YOUR_NUMBER_HERE"],
+      "selfChatMode": true
+    },
     "telegram": {
       "accounts": {
         "sohan":   { "botToken": "PASTE_SOHAN_BOT_TOKEN",   "dmPolicy": "pairing" },

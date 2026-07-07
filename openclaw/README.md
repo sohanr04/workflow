@@ -71,6 +71,40 @@ stuff.
    `openclaw pairing approve` (pairing = only approved people can talk to
    each bot).
 
+## WhatsApp on your own number
+
+Your agent can live in WhatsApp using your personal number — it links as a
+device on your account (same mechanism as WhatsApp Web) and you talk to it
+in WhatsApp's **"Message Yourself"** chat. Built into OpenClaw, no extra
+repo needed.
+
+1. Install the WhatsApp plugin:
+   ```bash
+   openclaw channels add --channel whatsapp
+   ```
+2. In `~/.openclaw/openclaw.json`, set your real number in
+   `channels.whatsapp.allowFrom` (E.164 format, e.g. `+15551234567`). The
+   example config already has the block + a binding routing WhatsApp to the
+   `sohan` agent.
+3. Link it (shows a QR — scan from phone: **WhatsApp → Settings → Linked
+   devices → Link a device**):
+   ```bash
+   openclaw channels login --channel whatsapp
+   ```
+4. `openclaw gateway restart`, then open the "Message Yourself" chat in
+   WhatsApp and say hi. Replies arrive prefixed with the agent's name.
+
+Know before you link:
+
+- **Only you can trigger it.** `dmPolicy: "allowlist"` with just your
+  number means friends texting you never reach the agent — it won't reply
+  to your chats on your behalf.
+- **Unofficial protocol.** This rides WhatsApp Web (Baileys), which is
+  against WhatsApp's ToS; accounts occasionally get flagged. Rare in
+  self-chat use, but if losing your number would wreck you, use a spare
+  SIM as a dedicated agent number instead (OpenClaw's recommended setup).
+- **Laptop must stay online** — the gateway owns the linked session.
+
 ## Personalizing
 
 - `workspaces/<person>/SOUL.md` — personality. Sohan's is the full

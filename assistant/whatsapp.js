@@ -83,11 +83,15 @@ async function start() {
   // stale hardcoded version is the classic cause of instant 405 failures.
   const { version } = await fetchLatestBaileysVersion();
   log(`using WhatsApp Web protocol v${version.join('.')}`);
+  // Quiet Baileys' internal JSON debug logging; our own log lines remain.
+  let logger;
+  try { logger = require('pino')({ level: 'error' }); } catch { /* default logger */ }
   const sock = makeWASocket({
     auth: state,
     version,
     browser: Browsers.macOS('Desktop'),
     syncFullHistory: false,
+    logger,
   });
   sock.ev.on('creds.update', saveCreds);
 

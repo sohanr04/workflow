@@ -53,7 +53,9 @@ if (!token) {
   console.error(`Missing bot token: set ${profile.botTokenEnv} in assistant/.env`);
   process.exit(1);
 }
-const API = `https://api.telegram.org/bot${token}`;
+// Overridable for tests (test/e2e.js points this at a local mock).
+const API_BASE = process.env.TELEGRAM_API_BASE || 'https://api.telegram.org';
+const API = `${API_BASE}/bot${token}`;
 
 // Per-chat Claude session ids so conversations have continuity.
 const stateDir = path.join(profileDir, 'state');

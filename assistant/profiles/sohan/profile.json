@@ -13,8 +13,14 @@
     "WebSearch",
     "WebFetch",
     "TodoWrite",
-    "Task"
+    "Task",
+    "Bash(npx @gongrzhe/server-gmail-autoauth-mcp:*)",
+    "Bash(mkdir:*)",
+    "Bash(ls:*)",
+    "Bash(mv:*)",
+    "Bash(cp:*)"
   ],
+  "addDirs": ["~/.gmail-mcp", "~/Downloads"],
   "timeoutSeconds": 300,
   "whatsapp": {
     "selfChat": true,

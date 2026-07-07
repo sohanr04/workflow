@@ -7,6 +7,7 @@
  */
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -78,6 +79,11 @@ function createClaude({ profile, profileDir, sessionsFileName = 'sessions.json',
       const allowedTools = [...(profile.allowedTools || []), ...mcpToolAllow];
       if (allowedTools.length) args.push('--allowedTools', allowedTools.join(','));
       if (mcpToolAllow.length) args.push('--mcp-config', mcpConfigPath);
+      // Extra directories the agent may read/write (e.g. ~/.gmail-mcp for
+      // OAuth key files). "~" expands to the home directory.
+      for (const d of profile.addDirs || []) {
+        args.push('--add-dir', d.replace(/^~(?=$|\/)/, os.homedir()));
+      }
       if (profile.model) args.push('--model', profile.model);
       if (sessionId) args.push('--resume', sessionId);
 

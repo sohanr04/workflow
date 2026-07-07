@@ -144,7 +144,7 @@ async function main() {
       const chatId = ownerChatId();
       if (chatId) return send(chatId, text);
     },
-    runScheduled: (prompt) => {
+    runScheduled: (prompt, opts = {}) => {
       const chatId = ownerChatId();
       if (!chatId) return;
       enqueue(chatId, async () => {
@@ -152,7 +152,16 @@ async function main() {
         try {
           // Fresh session: persona + memory still load via the profile dir.
           const res = await claude.runClaude(prompt, undefined);
-          await send(chatId, res.ok ? res.text : `Scheduled task failed: ${res.error}`);
+          if (!res.ok) {
+            if (opts.silentErrors) log('scheduled run failed silently:', res.error);
+            else await send(chatId, `Scheduled task failed: ${res.error}`);
+            return;
+          }
+          if (opts.suppressIf && res.text && res.text.includes(opts.suppressIf)) {
+            log('heartbeat: nothing to report');
+            return;
+          }
+          await send(chatId, res.text);
         } finally {
           stopTyping();
         }

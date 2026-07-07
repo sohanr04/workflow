@@ -169,6 +169,35 @@ function startScheduler({ profile, profileDir, log, sendToOwner, runScheduled })
   const remindersFile = path.join(profileDir, 'reminders.json');
   let lastScheduleMinute = '';
 
+  // Heartbeat: profile.json "heartbeat" = {everyMinutes, quietHours, prompt}.
+  // Runs the prompt on an interval; the persona decides whether anything
+  // deserves an unprompted message and answers HEARTBEAT_OK to stay silent.
+  const hb = profile.heartbeat;
+  const hbStateFile = path.join(profileDir, 'state', 'heartbeat.json');
+  let lastHb = 0;
+  try { lastHb = JSON.parse(fs.readFileSync(hbStateFile, 'utf8')).last || 0; } catch { /* first run */ }
+
+  function inQuietHours(now) {
+    const [qs, qe] = (hb && hb.quietHours) || ['23:00', '07:30'];
+    const toMin = (s) => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+    const cur = now.getHours() * 60 + now.getMinutes();
+    const s = toMin(qs);
+    const e = toMin(qe);
+    return s <= e ? (cur >= s && cur < e) : (cur >= s || cur < e);
+  }
+
+  function checkHeartbeat() {
+    if (!hb || !hb.prompt) return;
+    const now = new Date();
+    if (Date.now() - lastHb < (hb.everyMinutes || 30) * 60000) return;
+    if (inQuietHours(now)) return;
+    lastHb = Date.now();
+    fs.writeFileSync(hbStateFile, JSON.stringify({ last: lastHb }));
+    log('heartbeat patrol');
+    Promise.resolve(runScheduled(hb.prompt, { suppressIf: 'HEARTBEAT_OK', silentErrors: true }))
+      .catch((e) => log('heartbeat failed:', e.message));
+  }
+
   function checkReminders() {
     if (!fs.existsSync(remindersFile)) return;
     let items;
@@ -222,6 +251,7 @@ function startScheduler({ profile, profileDir, log, sendToOwner, runScheduled })
     try {
       checkReminders();
       checkSchedules();
+      checkHeartbeat();
     } catch (e) {
       log('scheduler error:', e.message);
     }

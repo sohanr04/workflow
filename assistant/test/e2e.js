@@ -58,6 +58,8 @@ fs.writeFileSync(
     allowedUserIds: [OWNER],
     claudeBin: fakeClaude,
     timeoutSeconds: 30,
+    // Fires on the first scheduler tick; quietHours never match.
+    heartbeat: { everyMinutes: 1, quietHours: ['00:00', '00:00'], prompt: 'HB_PATROL' },
   })
 );
 
@@ -168,6 +170,10 @@ async function main() {
     check('due reminder delivered', true);
     const remaining = JSON.parse(fs.readFileSync(path.join(profileDir, 'reminders.json'), 'utf8'));
     check('one-off reminder removed after firing', remaining.length === 0);
+
+    // 6. heartbeat fires and delivers (fake claude echoes, so not suppressed)
+    await waitFor('heartbeat delivery', () => sent.some((m) => m.text === 'fresh:HB_PATROL'), 30000);
+    check('heartbeat patrol delivered when it has something to say', true);
   } catch (e) {
     check(e.message, false);
     console.error('\n--- gateway log ---\n' + gatewayLog);

@@ -167,6 +167,31 @@ writes `profiles/<person>/reminders.json`; the gateway checks every ~20s and
 pings your Telegram when one is due. Supports one-off, `daily`, and `weekly`
 repeats. Times are laptop-local.
 
+## Heartbeat: texting YOU first (event-driven)
+
+Beyond fixed schedules, the assistant patrols on an interval and decides
+for itself whether anything deserves an unprompted message: an important
+new email, a thread someone's been waiting on for days, a meeting within
+the hour, a commitment you've been dodging, an evening gym check-in. If
+nothing clears the bar it answers `HEARTBEAT_OK` internally and you hear
+nothing — no filler pings.
+
+`profile.json`:
+
+```json
+"heartbeat": {
+  "everyMinutes": 30,
+  "quietHours": ["23:00", "07:15"],
+  "prompt": "…patrol instructions (see sohan's profile for the template)…"
+}
+```
+
+- Email/calendar awareness needs the MCP servers connected (`mcp.json`).
+- One nudge per topic per day — it logs nudges in memory/notes.md and
+  checks before repeating itself.
+- Cost knob: each patrol is a model run. 30 min ≈ ~35 runs/day; widen the
+  interval or use a cheaper `model` if usage is metered for you.
+
 ## Scheduled check-ins (briefings, reviews)
 
 `profile.json` → `"scheduled"`: prompts that fire at a set time and message

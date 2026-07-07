@@ -126,11 +126,20 @@ async function start() {
           profileDir,
           log,
           sendToOwner: (text) => selfJid && sendTo(selfJid, text),
-          runScheduled: (prompt) => {
+          runScheduled: (prompt, opts = {}) => {
             if (!selfJid) return;
             enqueue(selfJid, async () => {
               const res = await claude.runClaude(prompt, undefined);
-              await sendTo(selfJid, res.ok ? res.text : `Scheduled task failed: ${res.error}`);
+              if (!res.ok) {
+                if (opts.silentErrors) log('scheduled run failed silently:', res.error);
+                else await sendTo(selfJid, `Scheduled task failed: ${res.error}`);
+                return;
+              }
+              if (opts.suppressIf && res.text && res.text.includes(opts.suppressIf)) {
+                log('heartbeat: nothing to report');
+                return;
+              }
+              await sendTo(selfJid, res.text);
             });
           },
         });

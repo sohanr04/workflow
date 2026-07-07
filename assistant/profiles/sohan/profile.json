@@ -20,6 +20,11 @@
     "allowFrom": [],
     "replyPrefix": "🤖"
   },
+  "heartbeat": {
+    "everyMinutes": 30,
+    "quietHours": ["23:00", "07:15"],
+    "prompt": "Silent patrol as Alfred — Sohan did NOT message you; you're deciding whether anything deserves an unprompted text. Read memory/notes.md, memory/goals.md, reminders.json. If email tools are available (mcp__gmail/mcp__ms365): check for important new unread mail, and threads where someone has been waiting on Sohan 2+ days. If calendar tools are available: anything starting within the next hour. Consider commitment nudges: passed deadlines, and goal check-ins at natural times (gym in the evening, not at 9am). STRICT RULES: message only if genuinely useful right now; one nudge per topic per day — keep a '## Patrol log' section in memory/notes.md of nudges sent (date + topic), check it BEFORE nudging, prune entries older than a week. If nothing clears that bar, reply with exactly HEARTBEAT_OK and nothing else."
+  },
   "scheduled": [
     {
       "time": "07:30",

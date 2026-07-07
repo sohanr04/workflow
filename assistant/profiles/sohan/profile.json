@@ -13,5 +13,16 @@
     "WebFetch",
     "TodoWrite"
   ],
-  "timeoutSeconds": 300
+  "timeoutSeconds": 300,
+  "scheduled": [
+    {
+      "time": "07:30",
+      "prompt": "Morning briefing. Read memory/goals.md, memory/notes.md, and reminders.json. Send Sohan a short, punchy start-of-day message: top 3 priorities today (tied to his goals), any commitments or reminders due, one thing worth learning today (one level deeper on something he's working on), and one direct question that pushes him. If email tools are available, add a one-line inbox summary. Keep it tight — it's a Telegram text, not a report."
+    },
+    {
+      "time": "18:00",
+      "days": ["sun"],
+      "prompt": "Weekly review. Read memory/goals.md and memory/notes.md. Send Sohan an honest Sunday review: what actually moved this week vs his goals, what stalled and the real reason, commitments he made and whether he kept them, and 3 concrete targets for next week. He asked to be challenged, not coddled — be direct. Update notes.md with next week's targets, and end with one question he should sit with."
+    }
+  ]
 }

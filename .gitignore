@@ -1,8 +1,10 @@
 # Secrets — bot tokens live here, never commit
 assistant/.env
 
-# Per-chat Claude session state
+# Per-chat Claude session state + live reminders + personal MCP config
 assistant/profiles/*/state/
+assistant/profiles/*/reminders.json
+assistant/profiles/*/mcp.json
 
 # Node
 node_modules/

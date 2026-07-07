@@ -67,6 +67,20 @@ const saveSessions = () =>
 const log = (...args) =>
   console.log(new Date().toISOString(), `[${profileName}]`, ...args);
 
+// Optional per-profile MCP servers (e.g. Gmail): if profiles/<p>/mcp.json
+// exists it's passed to claude, and its servers are auto-allowlisted.
+const mcpConfigPath = path.join(profileDir, 'mcp.json');
+let mcpToolAllow = [];
+if (fs.existsSync(mcpConfigPath)) {
+  try {
+    const servers = JSON.parse(fs.readFileSync(mcpConfigPath, 'utf8')).mcpServers || {};
+    mcpToolAllow = Object.keys(servers).map((n) => `mcp__${n}`);
+    log('mcp servers enabled:', Object.keys(servers).join(', ') || '(none)');
+  } catch (e) {
+    log('WARNING: could not parse mcp.json, skipping it:', e.message);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Telegram helpers
 // ---------------------------------------------------------------------------
@@ -110,9 +124,9 @@ function runClaude(userText, sessionId) {
       '--output-format', 'json',
       '--permission-mode', profile.permissionMode || 'acceptEdits',
     ];
-    if (Array.isArray(profile.allowedTools) && profile.allowedTools.length) {
-      args.push('--allowedTools', profile.allowedTools.join(','));
-    }
+    const allowedTools = [...(profile.allowedTools || []), ...mcpToolAllow];
+    if (allowedTools.length) args.push('--allowedTools', allowedTools.join(','));
+    if (mcpToolAllow.length) args.push('--mcp-config', mcpConfigPath);
     if (profile.model) args.push('--model', profile.model);
     if (sessionId) args.push('--resume', sessionId);
 
@@ -171,6 +185,87 @@ async function ask(chatId, userText) {
     saveSessions();
   }
   return res;
+}
+
+// ---------------------------------------------------------------------------
+// Proactive: reminders + scheduled prompts (morning briefing, weekly review)
+// ---------------------------------------------------------------------------
+
+// In a Telegram DM, chat id == user id, so the first allowlisted user is
+// where proactive messages go.
+const ownerChatId = () => (profile.allowedUserIds || [])[0];
+
+// The assistant sets reminders by writing profiles/<p>/reminders.json:
+//   [{"when": "2026-07-08T09:00", "text": "Call the bank", "repeat": "none"}]
+// "when" is laptop-local time; repeat is "none" | "daily" | "weekly".
+const remindersFile = path.join(profileDir, 'reminders.json');
+
+const toLocalISO = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-` +
+  `${String(d.getDate()).padStart(2, '0')}T` +
+  `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+function checkReminders() {
+  const chatId = ownerChatId();
+  if (!chatId || !fs.existsSync(remindersFile)) return;
+  let items;
+  try { items = JSON.parse(fs.readFileSync(remindersFile, 'utf8')); } catch { return; }
+  if (!Array.isArray(items)) return;
+
+  const now = new Date();
+  let changed = false;
+  const keep = [];
+  for (const r of items) {
+    const due = new Date(r.when);
+    if (isNaN(due) || due > now) { keep.push(r); continue; }
+    send(chatId, `⏰ ${r.text}`).catch((e) => log('reminder send failed:', e.message));
+    changed = true;
+    if (r.repeat === 'daily' || r.repeat === 'weekly') {
+      const next = new Date(due);
+      do {
+        next.setDate(next.getDate() + (r.repeat === 'daily' ? 1 : 7));
+      } while (next <= now);
+      keep.push({ ...r, when: toLocalISO(next) });
+    }
+  }
+  if (changed) fs.writeFileSync(remindersFile, JSON.stringify(keep, null, 2));
+}
+
+// profile.json "scheduled": [{"time": "07:30", "days": ["sun"], "prompt": "..."}]
+// Times are laptop-local; omit "days" for every day. Each run is a fresh
+// Claude session (persona + memory still load via CLAUDE.md).
+const DAY_NAMES = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+let lastScheduleMinute = '';
+
+function checkSchedules() {
+  const chatId = ownerChatId();
+  const scheduled = profile.scheduled || [];
+  if (!chatId || !scheduled.length) return;
+
+  const now = new Date();
+  const hhmm =
+    `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const minuteStamp = `${now.toDateString()} ${hhmm}`;
+  if (minuteStamp === lastScheduleMinute) return; // fire at most once per minute
+  lastScheduleMinute = minuteStamp;
+
+  for (const s of scheduled) {
+    if (s.time !== hhmm) continue;
+    if (Array.isArray(s.days) &&
+        !s.days.map((d) => String(d).toLowerCase().slice(0, 3)).includes(DAY_NAMES[now.getDay()])) {
+      continue;
+    }
+    log('firing scheduled prompt at', s.time);
+    enqueue(chatId, async () => {
+      const stopTyping = typing(chatId);
+      try {
+        const res = await runClaude(s.prompt, undefined);
+        await send(chatId, res.ok ? res.text : `Scheduled task failed: ${res.error}`);
+      } finally {
+        stopTyping();
+      }
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -247,6 +342,16 @@ async function main() {
   if ((profile.allowedUserIds || []).length === 0) {
     log('SETUP MODE: no allowedUserIds yet. Message the bot to get your id.');
   }
+
+  // Reminders + scheduled check-ins tick every 20s.
+  setInterval(() => {
+    try {
+      checkReminders();
+      checkSchedules();
+    } catch (e) {
+      log('scheduler error:', e.message);
+    }
+  }, 20000);
 
   let offset = 0;
   for (;;) {

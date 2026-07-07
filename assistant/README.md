@@ -106,11 +106,43 @@ Per-person knobs in `profile.json`:
   `assistant/profiles/*/memory/` to `.gitignore` first.
 - `.env` (bot tokens) and `state/` (session ids) are already git-ignored.
 
+## Reminders
+
+Just tell the assistant: "remind me to call the bank tomorrow at 9". It
+writes `profiles/<person>/reminders.json`; the gateway checks every ~20s and
+pings your Telegram when one is due. Supports one-off, `daily`, and `weekly`
+repeats. Times are laptop-local.
+
+## Scheduled check-ins (briefings, reviews)
+
+`profile.json` → `"scheduled"`: prompts that fire at a set time and message
+you with the result. Sohan's profile ships with a 07:30 morning briefing and
+a Sunday 18:00 weekly review — edit times/prompts to taste, or add your own:
+
+```json
+{"time": "07:30", "days": ["mon","tue"], "prompt": "..."}
+```
+
+Omit `"days"` for every day. Each run is a fresh session with full persona +
+memory. **Adjust the times to your timezone** — they use the laptop's clock.
+
+## Email (Gmail via MCP)
+
+The assistant can read/summarize your inbox and write drafts (it's told to
+never send — you hit send yourself):
+
+1. `cp profiles/sohan/mcp.json.example profiles/sohan/mcp.json`
+2. The example uses a community Gmail MCP server
+   (`@gongrzhe/server-gmail-autoauth-mcp`) which needs a Google Cloud OAuth
+   credential — follow that project's README for the one-time auth flow. Any
+   Gmail MCP server works; whatever is in `mcp.json` gets auto-enabled.
+3. Restart the gateway. It logs `mcp servers enabled: gmail` on startup.
+
+`mcp.json` is git-ignored (it's personal). Each family member can have their
+own with their own accounts.
+
 ## Ideas for later
 
-- Daily briefing: a cron job that runs
-  `claude -p "Write my morning briefing" ...` and sends it to your chat.
-- Reminders skill: assistant writes to `reminders.json`, gateway checks it
-  every minute and pings you.
 - Voice notes: transcribe Telegram voice messages before handing to Claude.
+- Calendar MCP server, same pattern as Gmail.
 - Group chat mode: one family bot everyone can talk to, with shared memory.

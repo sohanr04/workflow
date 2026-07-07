@@ -1,0 +1,43 @@
+{
+  "agents": {
+    "defaults": {
+      "model": { "primary": "anthropic/claude-opus-4-8" },
+      "models": {
+        "anthropic/claude-opus-4-8": {
+          "agentRuntime": { "id": "claude-cli" }
+        }
+      }
+    },
+    "list": [
+      {
+        "id": "sohan",
+        "workspace": "/home/EDIT_ME/workflow/openclaw/workspaces/sohan",
+        "agentDir": "~/.openclaw/agents/sohan/agent"
+      },
+      {
+        "id": "brother",
+        "workspace": "/home/EDIT_ME/workflow/openclaw/workspaces/brother",
+        "agentDir": "~/.openclaw/agents/brother/agent"
+      },
+      {
+        "id": "dad",
+        "workspace": "/home/EDIT_ME/workflow/openclaw/workspaces/dad",
+        "agentDir": "~/.openclaw/agents/dad/agent"
+      }
+    ]
+  },
+  "bindings": [
+    { "agentId": "sohan",   "match": { "channel": "telegram", "accountId": "sohan" } },
+    { "agentId": "brother", "match": { "channel": "telegram", "accountId": "brother" } },
+    { "agentId": "dad",     "match": { "channel": "telegram", "accountId": "dad" } }
+  ],
+  "channels": {
+    "telegram": {
+      "accounts": {
+        "sohan":   { "botToken": "PASTE_SOHAN_BOT_TOKEN",   "dmPolicy": "pairing" },
+        "brother": { "botToken": "PASTE_BROTHER_BOT_TOKEN", "dmPolicy": "pairing" },
+        "dad":     { "botToken": "PASTE_DAD_BOT_TOKEN",     "dmPolicy": "pairing" }
+      }
+    }
+  }
+}

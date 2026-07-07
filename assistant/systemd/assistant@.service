@@ -1,0 +1,27 @@
+# Runs one assistant profile as a service: systemctl enable --now assistant@sohan
+#
+# Setup (once):
+#   1. Edit WorkingDirectory and User below for your laptop.
+#   2. sudo cp assistant@.service /etc/systemd/system/
+#   3. sudo systemctl daemon-reload
+#   4. sudo systemctl enable --now assistant@sohan
+# Add more people later: sudo systemctl enable --now assistant@brother
+#
+# Logs: journalctl -u assistant@sohan -f
+
+[Unit]
+Description=Personal assistant gateway (%i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# EDIT ME: absolute path to the assistant/ directory in your clone
+WorkingDirectory=/home/EDIT_ME/workflow/assistant
+ExecStart=/usr/bin/env node gateway.js %i
+# EDIT ME: the user you ran `claude login` as (NOT root)
+User=EDIT_ME
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

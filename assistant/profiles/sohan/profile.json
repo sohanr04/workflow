@@ -1,0 +1,17 @@
+{
+  "displayName": "Sohan",
+  "botTokenEnv": "TELEGRAM_BOT_TOKEN_SOHAN",
+  "allowedUserIds": [],
+  "permissionMode": "acceptEdits",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "WebSearch",
+    "WebFetch",
+    "TodoWrite"
+  ],
+  "timeoutSeconds": 300
+}

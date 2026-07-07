@@ -1,0 +1,17 @@
+{
+  "displayName": "NAME_HERE",
+  "botTokenEnv": "TELEGRAM_BOT_TOKEN_NAME_HERE",
+  "allowedUserIds": [],
+  "permissionMode": "acceptEdits",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "WebSearch",
+    "WebFetch",
+    "TodoWrite"
+  ],
+  "timeoutSeconds": 300
+}

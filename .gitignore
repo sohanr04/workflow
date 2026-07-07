@@ -1,0 +1,8 @@
+# Secrets — bot tokens live here, never commit
+assistant/.env
+
+# Per-chat Claude session state
+assistant/profiles/*/state/
+
+# Node
+node_modules/

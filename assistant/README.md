@@ -1,0 +1,116 @@
+# Family Assistant
+
+Personal AI assistants over Telegram, one per person, powered by your Claude
+subscription (via Claude Code headless — no API key, no per-token billing).
+Runs on any always-on machine, like an old laptop.
+
+```
+Telegram bot (one per person)
+      │
+gateway.js  (tiny Node daemon, zero dependencies)
+      │
+claude -p   (Claude Code CLI, logged into your sub)
+      │
+profiles/<person>/   persona (CLAUDE.md) + memory (markdown files)
+```
+
+Each person gets their own bot, their own personality, and their own private
+memory. The assistant updates its memory files itself as it learns things.
+
+## Laptop setup (once)
+
+1. **Install Node 18+** — `node --version` to check.
+2. **Install Claude Code** and log in with your subscription:
+   ```bash
+   npm install -g @anthropic-ai/claude-code
+   claude login
+   ```
+3. **Clone this repo** onto the laptop.
+4. **Disable sleep** (lid close, suspend) in your OS power settings.
+
+## Set up a person (start: you)
+
+1. **Create a Telegram bot**: message [@BotFather](https://t.me/BotFather),
+   send `/newbot`, pick a name. Copy the token.
+2. **Save the token**:
+   ```bash
+   cd assistant
+   cp .env.example .env     # then paste your token into .env
+   ```
+3. **Run it**:
+   ```bash
+   node gateway.js sohan
+   ```
+4. **Activate yourself**: message your bot on Telegram. It replies with your
+   Telegram user id. Put that number in
+   `profiles/sohan/profile.json` → `"allowedUserIds": [123456789]`,
+   restart the gateway, and you're live. (This also locks the bot so ONLY
+   you can use it.)
+5. **Make it yours**: edit `profiles/sohan/CLAUDE.md` (personality) and
+   `profiles/sohan/memory/about-me.md` (facts about you). The assistant
+   keeps memory updated on its own from there.
+
+## Add your brother / dad
+
+```bash
+cp -r profiles/_template profiles/dad
+```
+
+1. Replace `NAME_HERE` in `profiles/dad/profile.json`, `CLAUDE.md`, and
+   `memory/about-me.md` — and personalize the vibe section for them.
+2. Create a NEW bot with @BotFather, add `TELEGRAM_BOT_TOKEN_DAD=...` to
+   `.env` (must match `botTokenEnv` in their profile.json).
+3. Run `node gateway.js dad` (each person is a separate process).
+4. Have them message the bot, then add their id to their `allowedUserIds`.
+
+All three assistants share your one Claude sub. Chat commands: `/new`
+(fresh conversation), `/id`, `/help`.
+
+## Run 24/7
+
+**systemd** (recommended): see `systemd/assistant@.service` — edit the two
+`EDIT_ME` lines, install it, then:
+
+```bash
+sudo systemctl enable --now assistant@sohan
+sudo systemctl enable --now assistant@dad
+journalctl -u assistant@sohan -f     # logs
+```
+
+Or quick-and-dirty with pm2: `pm2 start gateway.js --name sohan -- sohan`.
+
+## Tuning
+
+Per-person knobs in `profile.json`:
+
+- `allowedTools` — what the assistant can do. Default is files + web search.
+  Add e.g. `"Bash(curl:*)"` for specific commands, or MCP tools later.
+- `permissionMode` — `acceptEdits` lets it edit its own memory files without
+  prompting. Don't set `bypassPermissions` unless you understand the risk.
+- `model` — leave unset for your sub's default; set e.g. `claude-haiku-4-5`
+  to burn fewer sub tokens on someone's assistant.
+- `timeoutSeconds` — max time per reply (default 300).
+
+## Notes on your Claude sub
+
+- Everything runs through Claude Code's login, so usage counts against your
+  subscription's rolling limits. Three light users is normally fine; if you
+  hit limits, point the family profiles at a smaller `model`.
+- Long conversations cost more each message (full context is resent). Use
+  `/new` to reset when switching topics — cheaper and often better answers.
+
+## Privacy
+
+- Memory files contain personal info about each person. They're plain
+  markdown in this repo — if you push the repo anywhere shared, add
+  `assistant/profiles/*/memory/` to `.gitignore` first.
+- `.env` (bot tokens) and `state/` (session ids) are already git-ignored.
+
+## Ideas for later
+
+- Daily briefing: a cron job that runs
+  `claude -p "Write my morning briefing" ...` and sends it to your chat.
+- Reminders skill: assistant writes to `reminders.json`, gateway checks it
+  every minute and pings you.
+- Voice notes: transcribe Telegram voice messages before handing to Claude.
+- Group chat mode: one family bot everyone can talk to, with shared memory.

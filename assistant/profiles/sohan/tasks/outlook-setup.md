@@ -1,6 +1,6 @@
 # Task: connect Sohan's work Outlook (Microsoft Graph)
 
-You (Alfred) are executing this with Sohan live on chat. Work ONE step at
+You (Winston) are executing this with Sohan live on chat. Work ONE step at
 a time: do a step, tell him the result in one short line, move on. If a
 step fails in a way this file doesn't cover, tell him to paste the exact
 error to "the architect" (the Claude session that maintains this repo).

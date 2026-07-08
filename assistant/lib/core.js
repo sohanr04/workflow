@@ -80,9 +80,13 @@ function createClaude({ profile, profileDir, sessionsFileName = 'sessions.json',
       if (allowedTools.length) args.push('--allowedTools', allowedTools.join(','));
       if (mcpToolAllow.length) args.push('--mcp-config', mcpConfigPath);
       // Extra directories the agent may read/write (e.g. ~/.gmail-mcp for
-      // OAuth key files). "~" expands to the home directory.
+      // OAuth key files, or code repos it should read). "~" expands to home.
+      // Skip any that don't exist on this machine so a missing path (e.g. a
+      // repo not cloned on this laptop) can't break startup.
       for (const d of profile.addDirs || []) {
-        args.push('--add-dir', d.replace(/^~(?=$|\/)/, os.homedir()));
+        const dir = d.replace(/^~(?=$|\/)/, os.homedir());
+        if (fs.existsSync(dir)) args.push('--add-dir', dir);
+        else log(`addDir skipped (not found): ${dir}`);
       }
       if (profile.model) args.push('--model', profile.model);
       if (sessionId) args.push('--resume', sessionId);

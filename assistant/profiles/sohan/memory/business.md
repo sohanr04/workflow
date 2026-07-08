@@ -162,12 +162,48 @@ reply the relay processes just like an email. Notably **Jam Clothing** is
 blast-suppressed and uses the site as their pull channel. Product photos come
 from the districtstock Sent Items, refreshed every ~15 min.
 
-## Where deals live (evidenced)
+## Where deals live + YOUR ACCESS (important)
 
-- Work: **spr@grandempirehk.com** (Outlook) — most supplier offers + buyer
-  threads land or CC here. This is the box Winston scans.
+- Work: **spr@grandempirehk.com** (Outlook). **You have full access to this
+  box — every email, the entire history (~10,000+ messages), not just the
+  recent ones.** Use it. When you need the full picture on a buyer, a
+  supplier, a ref, or a past price — search the whole mailbox and read the
+  thread, don't work from a summary.
 - Relay outbound: **empire-districtstock@grandempirehk.com**.
 - Personal Gmail carries some (Parker forwards deals there).
+
+The buyer/supplier DBs in people/ are a **working set**, not the full list.
+There are **14 active suppliers** and many more buyer contacts than are
+written down. Build the roster out from the real box + the authoritative
+sources below as you go — never assume the people files are complete.
+
+## Understand the systems — READ THE RELAY CODEBASE
+
+The relay, website, and matching engine are real code you can and SHOULD read
+to fully understand this business. The authoritative repo:
+
+- **`~/Projects/grand-empire-stock-inventory-matching`** (branch
+  `feat/auto-relay`) — the mail relay (`harmonious-transformation`). Also on
+  GitHub: `sohanr04/grand-empire-stock-inventory-matching` (private).
+  Reading map:
+  - **`HANDOFF.md`** — READ FIRST. Current state, what's live, the session log.
+  - **`SUPPLIERS.md`** — every supplier's format + the leak tricks the relay
+    defeats (allowlist-not-blocklist: extract safe fields, rebuild a fresh
+    email so price/identity can't leak). This is the real supplier DB.
+  - **`data/customers.csv`** — the authoritative buyer list (company, contact,
+    email, unsubscribed).
+  - **`README.md` / `ROADMAP.md`** — architecture + direction.
+  - **`lib/factory.ts`, `src/server.ts`** — the factory loop (sourcing replies)
+    and the buyer loop (`buyer - <msg>` drafts a reply to the buyer). `lib/`
+    holds extraction, image redaction, voice profiles.
+- Siblings (if present): `~/Projects/ge-stock-site` (the catalog website),
+  `~/Projects/ge-site-intents` (the "Interested" click → buyer-reply worker).
+
+**Rules when reading the code:**
+- Read to UNDERSTAND, never to modify. The relay core is FROZEN — you don't
+  deploy, change, or run it. You're a deal operator, not the relay engineer.
+- The repo holds secrets (`.env`, Supabase/API keys). NEVER copy a secret into
+  memory, notes, chat, or anywhere — same absolute rule as always.
 
 ## Winston's job, in one line
 

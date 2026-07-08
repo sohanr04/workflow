@@ -20,7 +20,14 @@
     "Bash(mv:*)",
     "Bash(cp:*)"
   ],
-  "addDirs": ["~/.gmail-mcp", "~/Downloads"],
+  "addDirs": [
+    "~/.gmail-mcp",
+    "~/Downloads",
+    "~/Projects/grand-empire-stock-inventory-matching",
+    "~/Projects/grand-empire-stock-deals",
+    "~/Projects/ge-stock-site",
+    "~/Projects/ge-site-intents"
+  ],
   "timeoutSeconds": 300,
   "whatsapp": {
     "selfChat": true,

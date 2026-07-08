@@ -1,56 +1,46 @@
 # Buyers — who we sell stock to (the DB)
 
-<!-- The roster of who to TRACK on the sell side. Winston reads this before
-     quoting or chasing, and updates each one's patterns as he learns them.
-     Live deal state lives in deals.md; this is the standing intel on people.
-     Definitive customer list lives in the matching-system Supabase; this is
-     the working set built from the spr@ inbox (2026-07-08). -->
+<!-- The full roster on the SELL side. AUTHORITATIVE SOURCE: the relay repo's
+     data/customers.csv (company, contact, email, unsubscribed). 5 buyer
+     companies, ~37 contacts. Winston reads this before quoting/chasing and
+     updates each one's patterns. Live deal state is in deals.md. -->
 
-## Power Fashion (South Africa) — biggest buyer, high volume
-Contacts:
-- **Noma Fakazi** — NFakazi@PowerFashion.co.za — senior buyer (shoes, sneakers)
-- **Mandisa Dladla** — MDladla@PowerFashion.co.za — Trainee Buyer (pants, overcoats)
-- **Nomndeni Nkosi** — NNkosi@PowerFashion.co.za
-- **Hlengiwe Zindela** — HZindela@PowerFashion.co.za — raises orders
-- **Kyla** — girls'/kids tops (the 453k girls' tees)
-- We deal with them through **Joyce Wong** on our side.
+## Power Fashion (South Africa) — biggest buyer, high volume, ~19 contacts
+Active buyers we deal with most:
+- **Noma Fakazi** — nfakazi@ — senior buyer (shoes, sneakers)
+- **Mandisa Dladla** — mdladla@ — Trainee Buyer (pants, overcoats)
+- **Nomndeni Nkosi** — nnkosi@ · **Hlengiwe Zindela** — raises orders
+- **Kyla Mulder** — kmulder@ (girls'/kids tops) · Somi Ntsodi, Setshaba Mmusi,
+  Kylie Blakeman, Michelle Sampson, Ziyanda Zembe, Aysha Ballim, Clayton Manuel
+  (all @powerfashion.co.za; more on the full list — some unsubscribed)
+- We deal through **Joyce Wong** on our side.
+Patterns: quote USD (Parker pushes them off Rands); take a **1,000u test first**
+and hold the label (Noma won't overbuy a "test"); big SA volumes can need a
+**store import license** (the 453k girls' tees). Mandisa opens realistic
+($2.50 pants, $4 overcoats).
 
-Products: kids' shoes & crocs, board shoes, sneakers, ladies' pants &
-overcoats, girls' tees — high-volume retail stock.
-Patterns:
-- Quote in **Rands or USD** — Parker always pushes them to give USD.
-- Take a **small test order first** (e.g. 1,000u) and hold the line — Noma:
-  "then it's no longer a test if I take more than 1000u." Respect the label,
-  upsell after it lands.
-- Mandisa opens realistic: $2.50 on the pants, $4 on the overcoats.
-- Some deals need a **store import license** (came up on the 453k girls'
-  tees) — check licensing on big SA volumes.
-- Live: pants (Mandisa $2.50), overcoats (Mandisa $4), sneakers 1,000u test
-  $2.70 (Noma, order raising), kids board shoes 5,000 (raising), crocs 917.
+## Choice Clothing (South Africa) — very active, tough on price, ~5 contacts
+- **Lecia** (leciao@) — main buyer, jackets/joggers/bombers/windbreakers
+- **Nawaal** (nawaalk@) — caps · Caryn (caryna@), Kauthar (kauthars@),
+  Thakierah (thakierahj@)
+Patterns: **ONE contact per thread** — she hates multiple GE people mailing the
+same deal ("why so many diff people mail me?"). Needs a **clear USD price** on
+the offer + a **breakdown & size-M sample** before raising. Hard negotiator
+("not paying a cent more"); but gives firm numbers ($3.20 knit bomber).
 
-## Choice Clothing (South Africa) — very active, tough on price
-Contacts:
-- **Lecia Oosthuizen** — leciao@choiceclothing.co.za — main buyer (jackets,
-  joggers, windbreakers, bombers)
-- **Nawaal** — nawaalk@choiceclothing.co.za — caps
-Patterns:
-- **Hates multiple people from our side mailing the same deal** — "why are
-  there so many diff people that mail me?" Keep ONE point of contact per
-  thread with Choice.
-- Needs a **clear USD price on the offer** — our blasts sometimes go out
-  with no price and she can't gauge her bid.
-- **Won't raise an order without a breakdown + a size-M sample** first.
-- Hard negotiator — "No I am not paying a cent more."
-- Live: raglan jacket ($2.50), cap ($0.90 vs our $1.26), windbreaker, bomber
-  DIS-80566, jogger DIS-80499 (owes breakdown+sample), knit bomber DIS-80565
-  (she'll pay $3.20).
+## Jam Clothing (South Africa) — uses the WEBSITE, not blasts, ~5 contacts
+- Marisa Ribbink (marisar@), Grant Fraser (grant@), Ronald Mampa (ronaldm@),
+  Nicole Thompson (nicolet@), Tebogo Dube (tebogod@) — all @jamclothing.co.za
+- **Blast-suppressed** — Jam browses ge-stock-site.vercel.app and clicks
+  "Interested"; that becomes a buyer reply. Watch the site intents for them.
 
-## Good Hope Sales (Cape Town, SA) — NEW buyer
-Contacts:
-- **Chantal Nolan** — chantaln@goodhopesales.com
-Live: ladies lounge pants DIS-77131, target **$1.25**. New relationship —
-worth learning what else she buys.
+## Stride / Good Hope Sales (Cape Town, SA) — ~3 contacts
+- **Chantal Nolan** (chantaln@goodhopesales.com), Amanda (amandac@), David (davidf@)
+- Live: lounge pants DIS-77131 target $1.25. Newer relationship — learn their range.
 
-<!-- Add buyers here as they appear. For each: company, contacts+emails+role,
-     what they buy, how they negotiate, and any hard rules (like Choice's
-     one-contact rule). That intel is edge when quoting and chasing. -->
+## Style / Retail SLS (South Africa) — ~4 contacts
+- Charmain Xaba (charmaine.xaba@retailsls.co.za), Tidoe Mbhelu, Bianca Lee, Zahra
+- Company "Style" in the DB — not yet seen an active deal this week; keep warm.
+
+<!-- Full contact list + unsubscribe status: data/customers.csv in the relay
+     repo. Add per-buyer negotiation intel here as Winston learns it. -->

@@ -1,43 +1,53 @@
 # Suppliers — who we source stock from (the DB)
 
-<!-- The roster of who to TRACK on the buy side. The buy leg is where margin
-     is made (squeeze here), so watch each supplier's pricing behaviour.
-     Winston updates prices + patterns as he learns them. Live deal state is
-     in deals.md. Built from the spr@ inbox (2026-07-08). -->
+<!-- The full roster on the BUY side — where margin is made (squeeze here).
+     AUTHORITATIVE SOURCE: the relay repo's SUPPLIERS.md (per-supplier format
+     tricks) + the live inbox. 14 active suppliers across ~10,837 messages.
+     Winston: this is the working list — read the full box and the relay's
+     SUPPLIERS.md to go deeper on any one. Live deals in deals.md. -->
 
-## Gbest Garment (China — Changshu, Jiangsu)
-Contact:
-- **Cherry** — gbest-cherry@gbestgarment.com — Sales Manager
-  Tel: 86-512-8768 7189 · 86-15150386614
-Products: ladies' pants, overcoats — per-piece USD, power packing. Refs GBT26-xxxx.
-Pricing: pants at **$2.45** (we're pushing $1.80). WATCH: how far/fast Cherry
-drops on a counter — the whole pants deal margin depends on it.
+## The shape of the buy side
+Two suppliers are **75% of volume** — everything else is a long tail:
+- **stockpapa.cn — 47%** · **gbestgarment.com — 28%**.
+Concentrate attention there; know the rest exist so nothing slips.
 
-## Stockpapa (China) — stocklots specialist
-Contacts:
-- **Scott** — scott@stockpapa.cn
-- **papa666@stockpapa.cn** (Cindy signs the replies)
-- **Daisy** — daisy@stockpapa.cn
-- **admin@stockpapa.cn**
-Sites: stockpapa.com · stockpapa.en.alibaba.com. Refs SP-xxxxx / SPxxxxx.
-Products: bombers, jackets, joggers, kids' sneakers, board shoes — a deep,
-constantly-refreshed stocklot catalog ("always some items suit for you").
-Recent quotes: kids sneakers SP10643 **$2.59**; kids board shoes SP10649
-**$2.65**; bomber SP80529 (good colours per Parker); jogger SP80499.
+## The 14 active suppliers (domain · share · format)
+| Supplier | Vol | Format / notes |
+|---|---:|---|
+| **stockpapa.cn** | 47% | body + JPGs; `#` prices, "1st/2nd/Nth" repeats, sends multi-product **PPTX decks**; name+URLs in body |
+| **gbestgarment.com** | 28% | JPGs + Excel + inline; company info hidden in sheet cells; real total is the sheet TTL not the body line |
+| **tailormax.com** | 7% | body + inline photos + size chart |
+| **hpromise.com** | 5% | Excel + many inline images |
+| **bentagarment.com** | 4% | JPGs + Excel; 86% arrive as RE:/FW: threads |
+| **wolftrade.cn** | 3% | JPGs — **footwear** |
+| **yeletrading.com** | 2% | quotation-style sheets (this is "Atila" — body-only offers, drafted not auto-sent) |
+| **qq.com** | 1% | generic shared mailbox, JPGs |
+| **wellroyalgarment.com** | <1% | JPGs + inline |
+| **xuanqigmt.com** | <1% | JPGs + Excel |
+| **royalgarment.cn** | <1% | Excel-only + PDF (transposed sheet) |
+| **wintopstock.com** | <1% | Excel; price disguised as a 2nd "QTY" column |
+| **163.com** | <1% | generic mailbox, JPGs |
+| **wintopshoes.com** | <1% | Excel + img — **footwear** |
 
-## District Stock — relay-tied sourcing channel
-Contacts:
-- **Stanley Ng** — sng@district-stock.com
-- **sunny.lou@district-stock.com**
-Tied to the relay outbound (empire-districtstock@). Internal sourcing/stock
-channel — supplies offers that get blasted under DIS- refs.
+## Deeper intel on the ones we're actively dealing
+### Gbest Garment (Changshu, Jiangsu) — Cherry
+- gbest-cherry@gbestgarment.com · Sales Manager · 86-512-8768 7189 / 86-15150386614
+- Ladies' pants, overcoats; per-piece USD, power packing. Refs GBT26-xxxx.
+- Live: pants at $2.45 (pushing $1.80). WATCH how far/fast she drops — the
+  pants margin lives entirely in her counter.
 
-## baywatch098 (broker — low exclusivity)
-- baywatch098@gmail.com — sends inbound stock offers (e.g. Aeropostale mens
-  LS tees, 15,000 pcs, 100% cotton). NOTE: **blasts the same offer to many
-  traders** (rajmoni.com and others were on the same mails) — so it's an open
-  offer, not exclusive to us. Only chase if a buyer's already lined up.
+### Stockpapa — Scott / papa666 (Cindy) / Daisy / admin@stockpapa.cn
+- Biggest supplier by far. Deep, constantly-refreshed stocklot catalog:
+  bombers, jackets, joggers, kids' sneakers, board shoes. Refs SP-xxxxx.
+- Sends stock as **multi-product PowerPoint decks** (the relay fans these out
+  per product). Recent: sneakers SP10643 $2.59, board shoes SP10649 $2.65.
 
-<!-- Add suppliers here as they appear. For each: company, contacts+emails,
-     product strengths, ref prefix, and — most important — their pricing
-     behaviour (do they drop on a counter, by how much, how fast). -->
+### District Stock — Stanley Ng (sng@) / sunny.lou@district-stock.com
+- Relay-tied sourcing channel (outbound rides empire-districtstock@).
+
+### baywatch098@gmail.com — broker, LOW exclusivity
+- Inbound offers (Aeropostale LS tees 15k etc.) but **blasts the same offer to
+  many traders** — only chase with a buyer already lined up.
+
+<!-- To go deeper on any supplier's format/leak tricks, read SUPPLIERS.md in
+     the relay repo (grand-empire-stock-inventory-matching). -->

@@ -94,12 +94,28 @@
 - History:
   - 2026-07-08: Chantal gave target $1.25
 
-### PWR-SNEAKERS · Unisex Sneakers · 6,000 pcs
-- Sell: Power Fashion (Noma) | Status: negotiating | Ball: THEM
+### DIS-26061903 · Unisex Sneakers · 6,000 pcs
+- Sell: Power Fashion (Noma) | Status: confirmed (test) | Ball: THEM — raising
 - Numbers: 1,000u test @ $2.70 confirmed; 5,000 balance to upsell
-- Next: confirm the test order is actually raised (Joyce), then upsell balance.
+- Next: make sure the test order is actually raised (Joyce told Noma to raise),
+  then upsell the balance once it lands.
 - History:
-  - 2026-07-07: Joyce confirmed the 1,000prs test order @ $2.70
+  - 2026-07-07: Noma held to 1,000u test; Joyce confirmed 1,000prs @ $2.70, raise
+
+### DIS-2606061205 · Kids' Board Shoes · 5,000 pcs
+- Sell: Power Fashion (Noma / Hlengiwe Zindela) | Status: confirmed | Ball: THEM
+- Buy: Stockpapa — board shoes SP10649 quoted $2.65
+- Next: Noma said "I will raise the order" — confirm it's raised, watch the buy
+  cost ($2.65) vs sell to hold margin.
+- History:
+  - 2026-07-07: Noma to raise the order
+
+### DIS-80565-LLJ · Mens Knit Bomber Jacket · 2,117 pcs
+- Sell: Choice Clothing (Lecia) — will pay **$3.20** USD
+- Status: negotiating | Ball: US — price it against $3.20 / find the buy cost
+- Next: Lecia gave a firm $3.20; find a supplier cost under it and close.
+- History:
+  - 2026-07-07: Lecia — "in dollars I can pay $3.20"
 
 ## SUPPLIER SOURCING (offers in — need a buyer)
 

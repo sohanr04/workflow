@@ -52,16 +52,6 @@
 - History:
   - 2026-07-08: Nawaal offered $0.90 for all; Joyce confirmed $1.26, asked help
 
-### TWG · Warehouse Group repeat + W26 sample prices · (NEW ACCOUNT)
-- Sell: The Warehouse Group NZ (Mark Stirton) — repeat AW27 styles + samples
-- Status: quoting | Ball: US — get the priced list + cost to Mark
-- Next: Toni/Sherry are assembling W26 + repeat sample prices (ESSLC023 $7.00,
-  RTLC453 $5.00, OAKLC072 $8.55, etc.). Get the full priced list to Mark
-  BEFORE the **Jul 13 intro call**. New-account door — do not fumble it.
-- History:
-  - 2026-07-06: Mark liked the jackets, intro call booked Mon Jul 13 (Teams)
-  - 2026-07-08: Toni compiling repeat/W26 prices; Sherry sending style list
-
 ### DIS-80553-LLJ · Men Raglan Hooded Hybrid Jacket · 3,500 pcs
 - Sell: Choice Clothing (Lecia) — best **$2.50**; says our offers had no prices
 - Status: quoting | Ball: US — send a priced offer / respond to her $2.50
@@ -116,7 +106,7 @@
 ### SP80529-LLJ · Mens Solid Rib Collar Sueded Bomber Jacket
 - Buy: Stockpapa (Scott) — colours in, Parker likes them
 - Status: lead | Ball: US — match to a buyer
-- Next: likely the source for TWG's F1 bombers — line it up against that deal.
+- Next: find a buyer for these bombers before committing to the offer.
 - History:
   - 2026-07-07: Scott sent colours; Parker "very good colours"
 

@@ -99,8 +99,9 @@ people/ files as you learn it):
   needs a clear USD price on the offer; Nawaal opens low ($0.90 on the cap).
 - **Good Hope Sales** (Cape Town, SA) — Chantal Nolan (chantaln@goodhopesales)
   — NEW buyer, gave $1.25 target on lounge pants.
-- **The Warehouse Group** (NZ) — Mark Stirton — NEW account, high-priority;
-  repeat AW27 styles + samples, intro call Jul 13.
+
+<!-- The Warehouse Group (Mark Stirton, NZ) is repeat/production business,
+     NOT stocklot — deliberately OUT of Winston's stock-only desk. -->
 
 **Suppliers (BUY side — squeeze here, this is where margin is made)**
 - **Gbest Garment** (Cherry, gbest-cherry@) — GBT26-xxxx refs. Sat at $2.45

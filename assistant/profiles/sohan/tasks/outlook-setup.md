@@ -23,6 +23,30 @@ Do you have mcp__ms365__* tools available right now?
   restart you (same command as above), then resume at Step 2.
 - YES → Step 2.
 
+## Step 1.5 — company relay app (Sohan says one exists)
+
+Sohan believes the company already has a Graph app registration ("the
+relay system") with broad permissions. If he can get its credentials,
+this is the smoothest path:
+
+1. Have him (or whoever runs it) grab from portal.azure.com → Microsoft
+   Entra ID → App registrations → the relay app → Overview:
+   **Application (client) ID** and **Directory (tenant) ID** — and a
+   client secret if one is available (Certificates & secrets).
+2. Tell him to put them in `assistant/.env` on the laptop (NOT in chat,
+   NOT in any repo file — .env is git-ignored):
+   `MS365_MCP_CLIENT_ID=…`, `MS365_MCP_TENANT_ID=…`,
+   `MS365_MCP_CLIENT_SECRET=…` (secret line only if he has one).
+3. One portal setting must be on for device login to work under that
+   app: App registrations → the app → Authentication → "Allow public
+   client flows" → Yes. If login fails with an AADSTS error mentioning
+   public client or device code, this toggle is why.
+4. Restart the gateway, then do Step 2 — the sign-in now runs under the
+   company's own app, so tenant consent is already in place.
+
+If he can't get the credentials, fall back to the default flow (Step 2)
+and its triage (Step 3).
+
 ## Step 2 — login
 
 Call the ms365 `login` tool. It returns a URL (microsoft.com/devicelogin)

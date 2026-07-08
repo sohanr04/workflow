@@ -1,48 +1,28 @@
-# About Sohan
+# Sohan — on the desk
 
-<!-- Seeded from his Gmail/Outlook, July 2026. Keep current. -->
+<!-- Who Sohan is at Grand Empire and how he works. Business-relevant only. -->
 
-- Full name: Sohan P Ramchandani
-- Based in Hong Kong (TST area); Spanish national
-- Personal email: ramchandanisohan04@gmail.com · Work: spr@grandempirehk.com
-- GitHub: sohanr04
+- Full name: Sohan P Ramchandani · based in Hong Kong (TST)
+- Work email: **spr@grandempirehk.com** (Outlook — most deals live here)
+- Personal: ramchandanisohan04@gmail.com (Parker forwards some deals here)
+- His role: sources deals, gets supplier quotes, negotiates per-piece
+  prices on stock lots, manages buyer relationships, sends CADs/lookbooks.
+  Trades kids shoes, jackets, tees, sneakers, pants, windbreakers.
 
-## Work — Grand Empire HK (family business)
+## The team (Grand Empire HK)
 
-- Apparel/garment sourcing & trading company in Hong Kong; Sohan works
-  deals directly: getting supplier quotes, negotiating prices ($/pc on
-  stock lots), sending CADs/lookbooks, kids shoes, jackets, tees, sneakers
-- Dad: Parker (Mpr@grandempirehk.com) — runs the company, signs off on
-  payments, hates late fees; calls Sohan "Son"/"So"
-- Family in the business: Nikail (NPR@grandempirehk.com); mom Jasmine
-  (jasmine_ram@hotmail.com)
-- Key colleagues: Jacqueline Kwong (accounts/payments), Toni-Ann De Lange
-  (merchandise manager), Joyce Wong (sales/orders), Stanley Ng
-- Key clients/partners: Power Fashion (South Africa — Noma, Mandisa),
-  The Warehouse Group (NZ — Mark Stirton), Choice Clothing (SA),
-  Chinese suppliers (Gbest, Stockpapa etc.)
+- **Parker** (dad, Mpr@grandempirehk.com) — runs the company, **final say
+  on prices & payments**, hates late fees. Calls Sohan "Son"/"So".
+- **Nikail** (NPR@grandempirehk.com) — family, in the business.
+- **Joyce Wong** — sales/orders, raises confirmed orders.
+- **Toni-Ann De Lange** — merchandise manager (shipping, order status).
+- **Jacqueline Kwong** — accounts/payments.
+- **Stanley Ng** — colleague.
 
-## Education
+## How he works
 
-- Just finished at Northeastern University (Boston) — final summer class
-  2026
-- Starting Masters in Management (MIM 2026) at IE University, Madrid —
-  admissions contact Santiago Vera; student services corresponded about
-  passport (Spanish national, no visa needed)
-- Exploring dual-degree option with IE New York College (IENYC)
-- Was looking at Madrid property (buyer's agent Agnes, propertybuyers.es)
-
-## Projects & interests
-
-- Builds side projects: deploys on Vercel/Netlify (production-tracker,
-  hong-kong-threads-hub, Emp _web), a voice-clone app on Modal (f5-tts),
-  uses Wispr Flow, Descript, GitHub
-- Into markets/investing: reads Bloomberg, WSJ, Seeking Alpha; follows
-  Tesla/Nvidia; Polymarket user; Rocket Money for budgeting
-- MMA fan; concerts/sports via SeatGeek (Boston ties: Fenway, Red Sox)
-- Gets haircuts at Black Rose Barbershop (TST) — books via Resurva
-
-## Preferences
-
-- Likes replies short and casual; wants to be challenged, not coddled
-- Writes polite, upbeat emails ("I hope all is well with you!!")
+- Wants replies short, casual, and in dollars. Challenged, not coddled.
+- Writes polite, upbeat emails to counterparties ("I hope all is well!!") —
+  match that tone in drafts TO clients; be blunt with him.
+- He closes the deals and Parker signs prices — Winston preps and prompts,
+  never sends or commits.

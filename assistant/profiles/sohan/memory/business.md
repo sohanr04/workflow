@@ -90,36 +90,83 @@ actual economics. Fill these from Sohan (ask one at a time, in context):
 Each buyer and supplier has a pattern worth knowing cold (record it in the
 people/ files as you learn it):
 
-**Buyers**
-- **Power Fashion** (South Africa — Noma Fakazi, Mandisa Dladla, Kyla) —
-  uses DIS-xxxxx refs; big volumes; store-licensing can gate deals.
-  ASK SOHAN: their real target prices, who's the decision-maker, how they
-  negotiate.
-- **Choice Clothing** (SA — Lecia) — ASK SOHAN: what she buys, how fast she
-  moves, price sensitivity.
-- **The Warehouse Group** (NZ — Mark Stirton, NEW) — fresh account; wants
-  cost price on sample bomber units before the Jul 13 intro call. Landing
-  this opens a channel; treat it as high-priority.
+**Buyers (SELL side — they come in low, expect it)**
+- **Power Fashion** (SA) — Mandisa Dladla (Trainee Buyer, MDladla@), Nomndeni
+  Nkosi (NNkosi@), Noma Fakazi, Kyla. Big volumes; often quote in Rands (R);
+  store-licensing can gate deals. On the pants they opened R70 → $2.50.
+- **Choice Clothing** (SA) — Lecia Oosthuizen (leciao@), Nawaal (nawaalk@).
+  Very active — jackets, caps, joggers, windbreakers. Lecia deals fast but
+  needs a clear USD price on the offer; Nawaal opens low ($0.90 on the cap).
+- **Good Hope Sales** (Cape Town, SA) — Chantal Nolan (chantaln@goodhopesales)
+  — NEW buyer, gave $1.25 target on lounge pants.
+- **The Warehouse Group** (NZ) — Mark Stirton — NEW account, high-priority;
+  repeat AW27 styles + samples, intro call Jul 13.
 
-**Suppliers**
-- **Gbest Garment** (Cherry) — GBT26-xxxx refs. ASK SOHAN: does Cherry
-  typically come down on a counter, and by how much?
-- **Stockpapa** — ASK SOHAN: what categories, reliability.
-- Various China factory contacts. ASK SOHAN: who are the go-to sources per
-  category (jackets, shoes, tees)?
+**Suppliers (BUY side — squeeze here, this is where margin is made)**
+- **Gbest Garment** (Cherry, gbest-cherry@) — GBT26-xxxx refs. Sat at $2.45
+  on the pants; we're pushing $1.80. LEARN: how far/fast Cherry actually drops.
+- **Stockpapa** (Scott scott@, Daisy, papachina) — SP-xxxxx refs; bombers,
+  jackets. Good colours per Parker.
+- **District Stock** (Stanley Ng, sng@district-stock.com) — tied to the relay
+  outbound; internal sourcing channel.
+- LEARN: the go-to source per category (jackets, shoes, tees).
 
-## Where deals live (evidenced) & the systems (LEARN)
+## Two-sided deals — where the money actually is (evidenced 2026-07-08)
 
-Deals arrive and live primarily in **email**:
+**Most deals have two legs, and the margin is the gap between them:**
+- **BUY leg** — a supplier (Chinese factory: Gbest/Cherry, Stockpapa/Scott).
+- **SELL leg** — a buyer (SA: Power Fashion, Choice, Good Hope; NZ: TWG).
+
+Margin = **sell price − buy price, per piece × qty**. Worked example
+(DIS-26-3334 lady's pants, 7,500): buyer Power Fashion offered **$2.50**;
+supplier Cherry sat at **$2.45** → only 5c, dead. Joyce is squeezing Cherry
+to **$1.80** → that turns it into ~$5,250. **The lesson: buyers come in low
+and the real work is squeezing the SUPPLIER down, not the buyer up.** Winston
+tracks both legs on every deal and watches the buy side hardest.
+
+## Refs — how to read a deal code (evidenced)
+
+- **DIS-xxxxx** = a **District Stock** offer, blasted by the relay (see
+  below). Used across ALL buyers — it's Grand Empire's own offer number, not
+  any one buyer's. (Earlier note that DIS = Power Fashion's numbering was
+  WRONG.)
+- **GBT26-xxxx** = a Gbest (Cherry) supplier ref. **SP-xxxxx** = Stockpapa.
+- The ref is how a deal is tracked across the whole thread, both legs.
+
+## The relay — the automated blast engine (evidenced + from prior builds)
+
+Grand Empire runs a **mail relay** (Sohan's own system) that automates the
+top of the funnel. Sender address: **empire-districtstock@grandempirehk.com**.
+
+- A supplier stock offer comes in → the relay **strips the supplier's
+  identity and cost**, assigns a DIS ref, and **blasts the offer to matched
+  buyers** (photos, spec, sizes, qty) — buyers see "[External Sender]".
+- When a buyer replies with interest/a price, it comes back to the team
+  (Parker/Joyce/Sohan) and **human negotiation takes over** — that's the
+  email traffic Winston tracks in deals.md.
+- Some suppliers are **drafted not sent** (e.g. Atila) via a draft-mode
+  switch; there's also a global pause on buyer blasts. (Operational detail —
+  Winston doesn't run the relay, just understands deals are born through it.)
+
+So a DIS deal is usually **born automatically** (relay blast) and then
+**closed by hand** (the team negotiates buy + sell). Winston's job starts at
+the negotiation and never lets one stall.
+
+## The website — the buyer pull channel (from prior builds)
+
+**ge-stock-site.vercel.app** — a buyer-facing **live stock catalog** (rolling
+7-day window). Instead of waiting for a blast, some buyers browse the site
+and click **"Interested"** on an offer; that intent is turned into a buyer
+reply the relay processes just like an email. Notably **Jam Clothing** is
+blast-suppressed and uses the site as their pull channel. Product photos come
+from the districtstock Sent Items, refreshed every ~15 min.
+
+## Where deals live (evidenced)
+
 - Work: **spr@grandempirehk.com** (Outlook) — most supplier offers + buyer
-  threads. External senders tagged "[External Sender]".
+  threads land or CC here. This is the box Winston scans.
+- Relay outbound: **empire-districtstock@grandempirehk.com**.
 - Personal Gmail carries some (Parker forwards deals there).
-
-**The relay / the website — ASK SOHAN (not yet captured).** Sohan
-referenced a "relay" (tied to a Microsoft/Azure app) and a website. When he
-explains, record here: what the relay does, what triggers it, the site URL
-+ purpose, and whether Winston reads from or posts to it. Until then, work
-the email flow.
 
 ## Winston's job, in one line
 
@@ -139,6 +186,11 @@ benchmarked against history, not guessed.
 3. How much room Sohan has to move price without asking Parker.
 4. Freight/duty rule of thumb to SA and NZ.
 5. Payment terms + what Jacqueline needs before shipping.
-6. What the relay does and what the website is for.
-7. Go-to suppliers per category; whether Cherry/Gbest come down on counters.
-8. Power Fashion + Choice real target prices and decision-makers.
+6. How far/fast Cherry (and other suppliers) drop on a counter — the buy leg
+   is where margin is made, so this is worth watching every deal.
+7. Go-to supplier per category (jackets, shoes, tees).
+
+<!-- RESOLVED 2026-07-08 (kept for history): the relay = automated blast
+     engine (empire-districtstock@); the website = ge-stock-site.vercel.app
+     buyer pull channel; DIS- = District Stock relay ref. See sections above. -->
+

@@ -99,6 +99,7 @@ where he's gone silent → flag to chase.
 **Core (always loaded):**
 
 @memory/about-me.md
+@memory/business.md
 @memory/goals.md
 @memory/notes.md
 @memory/deals.md

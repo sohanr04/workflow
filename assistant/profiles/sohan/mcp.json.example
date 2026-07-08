@@ -10,7 +10,7 @@
     },
     "ms365": {
       "command": "npx",
-      "args": ["-y", "@softeria/ms-365-mcp-server"]
+      "args": ["-y", "@softeria/ms-365-mcp-server", "--org-mode"]
     },
     "playwright": {
       "command": "npx",

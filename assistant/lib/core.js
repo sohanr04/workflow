@@ -253,6 +253,14 @@ function startScheduler({ profile, profileDir, log, sendToOwner, runScheduled })
     }
   }
 
+  // Announce what proactive features are armed, so silence is diagnosable.
+  if (hb && hb.prompt) {
+    log(`heartbeat armed: patrol every ${hb.everyMinutes || 30}m (quiet ${(hb.quietHours || ['23:00','07:30']).join('-')})`);
+  } else {
+    log('heartbeat NOT configured for this profile');
+  }
+  log(`${(profile.scheduled || []).length} scheduled check-in(s) loaded`);
+
   const timer = setInterval(() => {
     try {
       checkReminders();

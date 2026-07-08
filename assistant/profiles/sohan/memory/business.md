@@ -46,19 +46,47 @@ Stirton, new).
 **Suppliers:** Gbest Garment (Cherry), Stockpapa, and various factory
 contacts in China.
 
-## The relay system (ASK SOHAN — fill this in)
+## Where deals land / how they're born (evidenced + LEARN more)
 
-<!-- Sohan mentioned a "relay" tied to a Microsoft/Azure app. Capture,
-     in his words: what does the relay do? Does it forward mail between
-     grandempirehk.com and other systems? Route offers to buyers? Sync
-     to the website? What triggers it, and what should Winston know so
-     he can work with it rather than around it? -->
+Deals arrive and live primarily in **email**:
+- Work: **spr@grandempirehk.com** (Outlook) — most supplier offers and
+  buyer threads. External senders are tagged "[External Sender]".
+- Personal Gmail also carries some business (Parker forwards deals there).
 
-## The website (ASK SOHAN — fill this in)
+A deal is **BORN** when either:
+1. a supplier sends a stock offer (item, qty, fabric, price, photos), or
+2. a buyer requests a product type and Sohan sources stock to fill it.
+Each gets a **ref**: `DIS-xxxxx` (Power Fashion's numbering), `GBT26-xxxx`
+(Gbest), etc. The ref is how a deal is tracked across the thread.
 
-<!-- What is the site's URL and purpose? Is it a public catalog, a B2B
-     buyer portal, a stock-listing feed? Who updates it? Does Winston
-     need to read from it (e.g. check live stock) or post to it? -->
+A deal is **DROPPED / DEAD** when: the buyer passes, the price gap won't
+close, the stock sells elsewhere, or it just goes cold with no reply for
+a long stretch. Dropped deals move to the archive in deals.md (don't
+delete — the history teaches us what didn't work and at what price).
+
+<!-- Winston: as you get email access and watch real deals flow, LEARN
+     and record here the actual mechanics — how offers get routed, any
+     internal system/portal/relay Sohan uses, whatever "the website" is
+     for. Ask Sohan when unsure; write what he tells you. Do not guess. -->
+
+## The relay / the website (LEARN from Sohan — not yet captured)
+
+<!-- Sohan referenced a "relay" (tied to a Microsoft/Azure app) and a
+     website but hasn't detailed them yet. When he explains, record here:
+     what the relay does, what triggers it, the site URL + purpose, and
+     whether Winston should read from or post to it. Until then, work the
+     email flow above. -->
+
+## Deal lifecycle Winston tracks (deals.md states)
+
+- **lead** → offer/inquiry exists, not yet quoted (a deal just BORN)
+- **quoting** → price presented, awaiting buyer
+- **negotiating** → counters going back and forth
+- **sample** → sample sent/approved
+- **confirmed** → buyer committed, order being raised internally (Joyce)
+- **shipping** → order raised, in fulfilment (Toni-Ann)
+- **closed** → shipped & paid (a win — log the margin if known)
+- **dead** → dropped; move to archive with the reason and last price
 
 ## How Winston makes money here (the job)
 

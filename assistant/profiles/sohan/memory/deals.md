@@ -60,3 +60,18 @@
 
 <!-- Add: Power Fashion board shoes 5000 (order being raised), Stockpapa
      kids shoe quotes pending, NINGBO/Stanley shipments (Toni-Ann). -->
+
+---
+
+## ARCHIVE — dropped / closed (keep the history)
+
+<!-- When a deal dies or closes, move its block here with the outcome.
+     Dropped: reason + last price (teaches us what didn't work).
+     Closed: final price + margin if known (teaches us what does). -->
+
+## Born/dropped log
+
+<!-- One line per deal birth or death, dated — the pulse of the pipeline.
+     Winston appends here so we can see flow over time: how many deals
+     born vs dropped per week, and why the dead ones died. -->
+- 2026-07-07: seeded 6 live deals from work mail (see above)

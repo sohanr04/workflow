@@ -6,19 +6,24 @@ interactive login, nothing that expires.** READ ONLY (list/search/read;
 never send/delete). This replaces the old `@softeria/ms-365-mcp-server`
 device-code setup, which is gone.
 
-## One-time setup (on the always-on Mac)
+## Setup — usually NOTHING to do
 
-1. Put the three creds in `assistant/.env` — copy them verbatim from the
-   relay's env file:
-   ```
-   # from ~/Projects/grand-empire-stock-inventory-matching/.env.local
-   MS_GRAPH_CLIENT_ID=…
-   MS_GRAPH_TENANT_ID=…
-   MS_GRAPH_CLIENT_SECRET=…
-   ```
-   (Never put these in chat or any committed file — `.env` is git-ignored.)
-2. Restart the gateway so it loads the new `.env`:
-   `cd assistant && node whatsapp.js sohan` (or `pm2 restart winston`).
+`graph.js` **self-sources** its creds: if `MS_GRAPH_*` aren't in the
+environment, it reads them from the relay's `.env.local`
+(`~/Projects/grand-empire-stock-inventory-matching/.env.local`, which is
+already on this Mac). So a plain **git pull + gateway restart** is enough —
+no `.env` editing. (The restart matters: it reloads `profile.json` so
+Winston is allowed to run the reader.)
+
+**Only** if the relay repo is NOT on this machine, put the three creds in
+`assistant/.env` manually (copy from the relay's `.env.local`; never in chat
+or a committed file):
+```
+MS_GRAPH_CLIENT_ID=…
+MS_GRAPH_TENANT_ID=…
+MS_GRAPH_CLIENT_SECRET=…
+```
+Or point `RELAY_ENV_PATH` at wherever that `.env.local` lives.
 
 ## Verify (Winston, do this once)
 

@@ -39,9 +39,29 @@ const BOXES = {
   dis: 'empire-districtstock@grandempirehk.com',
 };
 
-const CID = process.env.MS_GRAPH_CLIENT_ID || process.env.MS365_MCP_CLIENT_ID;
-const TID = process.env.MS_GRAPH_TENANT_ID || process.env.MS365_MCP_TENANT_ID;
-const SECRET = process.env.MS_GRAPH_CLIENT_SECRET || process.env.MS365_MCP_CLIENT_SECRET;
+// Creds: prefer env (assistant/.env). If absent, self-source them from the
+// relay's .env.local — it's on the same machine and holds the same MS_GRAPH_*
+// values, so Winston works with ZERO manual .env setup (just git pull +
+// restart). Never writes/copies the secret anywhere; reads it in-memory only.
+function fromRelayEnv(key) {
+  const home = os.homedir();
+  const paths = [
+    process.env.RELAY_ENV_PATH,
+    path.join(home, 'Projects/grand-empire-stock-inventory-matching/.env.local'),
+    path.join(home, 'workflow/../grand-empire-stock-inventory-matching/.env.local'),
+    path.join(home, 'grand-empire-stock-inventory-matching/.env.local'),
+  ].filter(Boolean);
+  for (const p of paths) {
+    try {
+      const m = fs.readFileSync(p, 'utf8').match(new RegExp('^' + key + '=(.*)$', 'm'));
+      if (m) return m[1].trim().replace(/^["']|["']$/g, '');
+    } catch { /* try next */ }
+  }
+  return undefined;
+}
+const CID = process.env.MS_GRAPH_CLIENT_ID || process.env.MS365_MCP_CLIENT_ID || fromRelayEnv('MS_GRAPH_CLIENT_ID');
+const TID = process.env.MS_GRAPH_TENANT_ID || process.env.MS365_MCP_TENANT_ID || fromRelayEnv('MS_GRAPH_TENANT_ID');
+const SECRET = process.env.MS_GRAPH_CLIENT_SECRET || process.env.MS365_MCP_CLIENT_SECRET || fromRelayEnv('MS_GRAPH_CLIENT_SECRET');
 
 function die(msg) { console.error('graph.js: ' + msg); process.exit(1); }
 function resolveBox(b) {

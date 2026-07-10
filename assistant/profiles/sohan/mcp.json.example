@@ -8,10 +8,7 @@
       "command": "npx",
       "args": ["-y", "@cocal/google-calendar-mcp"]
     },
-    "ms365": {
-      "command": "npx",
-      "args": ["-y", "@softeria/ms-365-mcp-server", "--org-mode"]
-    },
+    "//outlook": "Outlook is NOT an MCP — it's read via scripts/graph.js (app-only Graph, all 3 boxes, no login). The old @softeria/ms-365-mcp-server needed an interactive device-code sign-in and was removed.",
     "playwright": {
       "command": "npx",
       "args": [

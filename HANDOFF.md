@@ -34,13 +34,17 @@ PENDING (next session should drive these):
    `cd ~/workflow && git pull && bash scripts/laptop-setup.sh sohan`
    then `cd assistant && node whatsapp.js sohan` — look for
    "heartbeat armed" in the startup log.
-2. **Email connection (the big multiplier).** Makes Winston autonomous:
-   catches new deals, advances replies, flags what Sohan left waiting.
-   - Outlook: runbook at `assistant/profiles/sohan/tasks/outlook-setup.md`.
-     Uses company Azure app creds in `.env` (MS365_MCP_CLIENT_ID /
-     TENANT_ID / CLIENT_SECRET). Server needs `--org-mode` (done in
-     template). "Allow public client flows" must be ON in the app reg.
-   - Gmail: GCP OAuth flow, `mcp.json` gmail server.
+2. **Email connection (the big multiplier).**
+   - Outlook: **DONE (2026-07-10).** Read access to all 3 boxes (spr /
+     empire-chinastocks / empire-districtstock) via `scripts/graph.js` —
+     app-only Microsoft Graph, the SAME company app the relay uses, so NO
+     interactive login and nothing that expires. Read-only by design.
+     The old `@softeria/ms-365-mcp-server` device-code path was DROPPED (that
+     server can't do app-only). Setup: put the relay's three `MS_GRAPH_*`
+     values in `assistant/.env`, restart the gateway. Runbook:
+     `profiles/sohan/tasks/outlook-setup.md`. Usage: business.md → YOUR
+     ACCESS. Send-from-Outlook (Mail.Send) is a deliberate v2, not built.
+   - Gmail: GCP OAuth flow, `mcp.json` gmail server (still pending).
 3. **Obsidian vault integration (Sohan's request).** He keeps his business
    in an Obsidian vault on the Mac — wants Winston to read/write it as his
    real brain instead of separate memory files. NEED: the vault's folder

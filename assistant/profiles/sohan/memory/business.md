@@ -108,9 +108,14 @@ people/ files as you learn it):
   on the pants; we're pushing $1.80. LEARN: how far/fast Cherry actually drops.
 - **Stockpapa** (Scott scott@, Daisy, papachina) — SP-xxxxx refs; bombers,
   jackets. Good colours per Parker.
-- **District Stock** (Stanley Ng, sng@district-stock.com) — tied to the relay
-  outbound; internal sourcing channel.
 - LEARN: the go-to source per category (jackets, shoes, tees).
+
+> ⚠️ **"District Stock" is NOT a supplier.** It is Grand Empire's OWN
+> outbound identity — the name/address the relay blasts offers under
+> (empire-districtstock@grandempirehk.com) to hide the real supplier from
+> buyers. Every **DIS-** ref is our own offer number. (Stanley Ng is a
+> Grand Empire colleague per about-me.md, not a "District Stock" contact —
+> earlier note conflating them was wrong.)
 
 ## Two-sided deals — where the money actually is (evidenced 2026-07-08)
 
@@ -162,15 +167,44 @@ reply the relay processes just like an email. Notably **Jam Clothing** is
 blast-suppressed and uses the site as their pull channel. Product photos come
 from the districtstock Sent Items, refreshed every ~15 min.
 
-## Where deals live + YOUR ACCESS (important)
+## Where deals live + YOUR ACCESS — the Outlook reader (important)
 
-- Work: **spr@grandempirehk.com** (Outlook). **You have full access to this
-  box — every email, the entire history (~10,000+ messages), not just the
-  recent ones.** Use it. When you need the full picture on a buyer, a
-  supplier, a ref, or a past price — search the whole mailbox and read the
-  thread, don't work from a summary.
-- Relay outbound: **empire-districtstock@grandempirehk.com**.
-- Personal Gmail carries some (Parker forwards deals there).
+You have **read access to all 3 Grand Empire mailboxes** through a small
+app-only reader — the SAME Microsoft Graph app the relay uses, so there is
+**no login to do and nothing that expires**. It is READ ONLY (you cannot
+send, delete, or change anything from it — you still draft, Sohan sends).
+
+Run it from your working dir (`profiles/sohan/`):
+
+```
+node ../../scripts/graph.js boxes                 # the 3 mailboxes
+node ../../scripts/graph.js recent spr 15         # latest in the deal desk
+node ../../scripts/graph.js recent china 10       # supplier offers landing
+node ../../scripts/graph.js recent dis 10         # relay outbound / buyer intent
+node ../../scripts/graph.js search spr "Lecia" 20 # KQL search one box
+node ../../scripts/graph.js thread SP80499        # ONE deal across ALL 3 boxes, in time order
+node ../../scripts/graph.js get spr <messageId>   # full body of one message
+```
+
+The **three boxes and what each is for:**
+- **spr** = `spr@grandempirehk.com` — the human deal desk. Sohan + team
+  (Joyce, Parker) negotiating buy & sell. Most deal state lives here.
+- **china** = `empire-chinastocks@grandempirehk.com` — where **supplier
+  offers land** (Scott/Stockpapa, Cherry/Gbest, etc.). A new deal is often
+  BORN here.
+- **dis** = `empire-districtstock@grandempirehk.com` — the **relay's
+  outbound**: the blasted DIS- offers, and the buyer-intent forwards
+  ("Lecia is interested in DIS-… they said $2.90"). The SELL leg shows up here.
+
+**`thread <style-code>` is your deal-tracking superpower** — it pulls a
+code (SP80499, DIS-80553, GBT26-3334) across all 3 boxes and orders it in
+time, so you see the whole life of a deal — offer in → blasted → buyer bit →
+who replied last → where it stalled — in one shot. Run it on any deal you're
+reconciling or before answering "what's the status of X". Reconcile what you
+find into `deals.md` the same turn.
+
+- Personal Gmail carries some too (Parker forwards deals there) — via the
+  gmail MCP if connected.
 
 The buyer/supplier DBs in people/ are a **working set**, not the full list.
 There are **14 active suppliers** and many more buyer contacts than are

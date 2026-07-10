@@ -14,6 +14,7 @@
     "WebFetch",
     "TodoWrite",
     "Task",
+    "Bash(node ../../scripts/graph.js:*)",
     "Bash(npx @gongrzhe/server-gmail-autoauth-mcp:*)",
     "Bash(mkdir:*)",
     "Bash(ls:*)",
@@ -37,12 +38,12 @@
   "heartbeat": {
     "everyMinutes": 30,
     "quietHours": ["23:00", "07:15"],
-    "prompt": "Silent deal-desk patrol as Winston — Sohan did NOT message you; you're deciding whether a deal needs an unprompted text. Read memory/deals.md, memory/notes.md, reminders.json. THE ONLY QUESTION: is any money leaking right now? Flag: any deal where WE owe the next move, any buyer/supplier gone silent past its chase window, any pending price decision, any big-money gap (state it in dollars), any deal call within the hour. If email tools are available (mcp__gmail/mcp__ms365): scan for new deal inquiries to add as leads, replies that advance a deal (flip the ball), and threads where Sohan has left someone waiting 1-2+ days — reconcile against deals.md the same turn. When you flag a chase, tee up a short ready-to-send follow-up. STRICT RULES: message only if it protects or advances money right now; one nudge per topic per day — keep a '## Patrol log' section in memory/notes.md (date + topic), check it BEFORE nudging, prune entries older than a week. No life admin, no coaching, no chit-chat. If nothing clears that bar, reply with exactly HEARTBEAT_OK and nothing else."
+    "prompt": "Silent deal-desk patrol as Winston — Sohan did NOT message you; you're deciding whether a deal needs an unprompted text. Read memory/deals.md, memory/notes.md, reminders.json. THE ONLY QUESTION: is any money leaking right now? Flag: any deal where WE owe the next move, any buyer/supplier gone silent past its chase window, any pending price decision, any big-money gap (state it in dollars), any deal call within the hour. SCAN OUTLOOK — you have read access to all 3 boxes via `node ../../scripts/graph.js` (spr = deal desk, china = supplier offers in, dis = relay outbound/buyer intent): `recent spr 15` / `recent china 10` / `recent dis 10` for what's new, and `thread <style-code>` to pull any one deal across all 3 boxes in time order. Catch: new supplier offers or buyer-intent forwards to add as leads, replies that advance a deal (flip the ball), and threads where WE owe a reply 1-2+ days — reconcile against deals.md the same turn. When you flag a chase, tee up a short ready-to-send follow-up. STRICT RULES: message only if it protects or advances money right now; one nudge per topic per day — keep a '## Patrol log' section in memory/notes.md (date + topic), check it BEFORE nudging, prune entries older than a week. No life admin, no coaching, no chit-chat. If nothing clears that bar, reply with exactly HEARTBEAT_OK and nothing else."
   },
   "scheduled": [
     {
       "time": "07:30",
-      "prompt": "Deal-desk morning briefing, delivered as Winston. Read memory/deals.md, memory/goals.md, memory/notes.md, and reminders.json. A tight start-of-day rundown, pipeline first: which deals need action today, who we owe a reply, who's gone quiet and should be chased — each with the dollar stakes when they matter. Then any deal deadlines/calls due today (tee up the prep). If email tools are available, reconcile the inbox against deals.md first and surface only what moves money. One line at the end on where we stand vs the monthly target in goals.md. Tight — a trader's morning note, not a soliloquy. No life admin, no 'one thing to learn', no filler questions."
+      "prompt": "Deal-desk morning briefing, delivered as Winston. Read memory/deals.md, memory/goals.md, memory/notes.md, and reminders.json. A tight start-of-day rundown, pipeline first: which deals need action today, who we owe a reply, who's gone quiet and should be chased — each with the dollar stakes when they matter. Then any deal deadlines/calls due today (tee up the prep). Reconcile Outlook against deals.md FIRST via `node ../../scripts/graph.js recent spr 15` (and `recent china`/`recent dis`, plus `thread <code>` on any stale deal), then surface only what moves money. One line at the end on where we stand vs the monthly target in goals.md. Tight — a trader's morning note, not a soliloquy. No life admin, no 'one thing to learn', no filler questions."
     },
     {
       "time": "18:00",

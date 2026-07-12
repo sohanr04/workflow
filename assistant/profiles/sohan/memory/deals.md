@@ -26,6 +26,36 @@
   - <YYYY-MM-DD>: <what happened>
 ```
 
+## PIPELINE RULES (how Winston runs this file)
+
+**Stages** — a deal is in exactly one:
+lead (offer/inquiry exists, no price out) → quoting (price presented) →
+negotiating (counters flowing) → sample (sample/test in play) → confirmed
+(buyer committed, order raising) → shipping → closed | dead.
+A deal ADVANCES only on evidence (an email, or Sohan says so) — never on hope.
+
+**Chase windows** — past these, it's a leak; flag + draft the chase:
+| Situation | Window |
+|---|---|
+| Ball on US (we owe anyone anything) | 24h max — same day ideally |
+| Buyer silent on our offer/quote | 2 days |
+| Supplier silent on our counter/ask | 2 days |
+| Sample/test order pending, no movement | 3 days |
+| Confirmed but order not raised | 2 days |
+
+**Priority (what "hot" means)** — rank by:
+1. Computable lot spread (both legs known): biggest $ first.
+2. One leg known: qty × plausibility (a firm buyer number beats a wish).
+3. Past-window leaks jump the queue regardless of size.
+4. Ball-on-us beats ball-on-them at equal money.
+
+**Metrics** — updated every Sunday review (and glanced at in the brief):
+
+### Pipeline metrics
+- Live deals: 13 · Est. $ on the table (computable spreads): ~$5.3k+
+- This week: born 0 · closed 0 · dead 0 · booked $0
+- (baseline set 2026-07-10 — Winston recomputes each Sunday)
+
 ---
 
 ## HOT — money on the table

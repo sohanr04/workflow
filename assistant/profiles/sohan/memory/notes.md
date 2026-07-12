@@ -3,6 +3,9 @@
 <!-- Deal open loops, commitments, follow-ups. Business only. Prune when
      done. Winston keeps a patrol log at the bottom to avoid double-nudging. -->
 
+- **When email connects (first run): execute tasks/pipeline-onboard.md** —
+  rebuild the pipeline from the live box, then report + design feedback.
+
 - DIS-26070707 Girls' Tees 453,892 pcs (Kyla, Power Fashion): blocked on a
   **licensing question** — factory can export but Power needs a license to
   sell in stores. Huge volume; resolve the license path.

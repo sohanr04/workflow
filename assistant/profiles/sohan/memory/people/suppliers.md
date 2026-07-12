@@ -42,8 +42,11 @@ Concentrate attention there; know the rest exist so nothing slips.
 - Sends stock as **multi-product PowerPoint decks** (the relay fans these out
   per product). Recent: sneakers SP10643 $2.59, board shoes SP10649 $2.65.
 
-### District Stock — Stanley Ng (sng@) / sunny.lou@district-stock.com
-- Relay-tied sourcing channel (outbound rides empire-districtstock@).
+### ⚠️ "District Stock" is NOT a supplier
+- It's Grand Empire's OWN outbound identity — the name the relay blasts
+  offers under (empire-districtstock@). Every DIS- ref is our own offer
+  number. Stanley Ng / sunny.lou @district-stock.com are our side, not a
+  source. Never treat DIS- traffic as a supplier offer.
 
 ### baywatch098@gmail.com — broker, LOW exclusivity
 - Inbound offers (Aeropostale LS tees 15k etc.) but **blasts the same offer to

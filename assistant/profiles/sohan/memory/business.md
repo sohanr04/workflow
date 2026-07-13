@@ -174,6 +174,14 @@ app-only reader — the SAME Microsoft Graph app the relay uses, so there is
 **no login to do and nothing that expires**. It is READ ONLY (you cannot
 send, delete, or change anything from it — you still draft, Sohan sends).
 
+**HOW TO RUN IT (matters — get this wrong and it's blocked):** call it as
+the EXACT command below, from your working dir. Do NOT prepend `cd`, do NOT
+wrap it in quotes, do NOT use an absolute path — those forms are not on your
+permission allowlist and will come back "requires approval". Just:
+`node ../../scripts/graph.js <cmd>`. If a run is ever refused, you're either
+adding a `cd`/path prefix or trying a mailbox other than spr/china/dis
+(Parker's box `mpr@` is deliberately banned — that refusal is correct, not a bug).
+
 Run it from your working dir (`profiles/sohan/`):
 
 ```

@@ -1,6 +1,15 @@
-# Deal Desk — live pipeline
+# Deal Desk — Winston's working notes (the board is the pipeline)
 
-<!-- Winston's deal ledger for Grand Empire HK. THE TRACKING SYSTEM.
+<!-- THE PIPELINE IS THE BOARD, not this file. Read live deals with
+     `node ../../scripts/deals.js today|stalled|board|get` — the deals-engine
+     maintains stage/ball/urgency there every 3 min. THIS file is Winston's
+     NOTEBOOK on top of it: human context the board can't hold (target prices,
+     Parker's floor, "Sohan said hold at $2.20"), dollar math on a lot, chase
+     drafts in flight, decisions taken. Don't treat the blocks below as the
+     source of truth for what's live — the board is. The blocks are seed notes
+     from the early email scan; verify against the board before acting.
+
+     -- older note, kept for the format --
      Rebuilt 2026-07-08 from a live scan of spr@ Outlook (last ~5 days).
 
      STATUS: lead | quoting | negotiating | sample | confirmed | shipping | closed | dead

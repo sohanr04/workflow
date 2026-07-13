@@ -32,6 +32,7 @@
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
+const { retryFetch } = require('./_net'); // Happy-Eyeballs + retry hardening
 
 const BOXES = {
   spr: 'spr@grandempirehk.com',
@@ -97,10 +98,10 @@ async function doFetch(url, opts, what) {
     die(`no global fetch — this Node is too old (need 18+). node version: ${process.version}. Upgrade node on this machine.`);
   }
   try {
-    return await fetch(url, opts);
+    return await retryFetch(url, opts);
   } catch (e) {
     const cause = e && e.cause ? ` (cause: ${e.cause.code || e.cause.message || e.cause})` : '';
-    die(`${what} network call failed: ${e.message}${cause} — check this machine's internet/DNS/proxy. node ${process.version}`);
+    die(`${what} network call failed after retries: ${e.message}${cause} — check this machine's internet/DNS/proxy. node ${process.version}`);
   }
 }
 

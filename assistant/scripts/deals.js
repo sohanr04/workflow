@@ -29,6 +29,7 @@
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
+const { retryFetch } = require('./_net'); // Happy-Eyeballs + retry hardening
 
 function fromRelayEnv(key) {
   const home = os.homedir();
@@ -61,12 +62,12 @@ async function q(qs) {
   if (typeof fetch === 'undefined') die(`no global fetch — Node too old (need 18+). node ${process.version}`);
   let res;
   try {
-    res = await fetch(`${URL}/rest/v1/deals?${qs}`, {
+    res = await retryFetch(`${URL}/rest/v1/deals?${qs}`, {
       headers: { apikey: KEY, Authorization: 'Bearer ' + KEY },
     });
   } catch (e) {
     const c = e && e.cause ? ` (cause: ${e.cause.code || e.cause.message || e.cause})` : '';
-    die(`board query failed: ${e.message}${c} — check network/DNS. node ${process.version}`);
+    die(`board query failed after retries: ${e.message}${c} — check network/DNS. node ${process.version}`);
   }
   if (!res.ok) die(`board query HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
   return res.json();

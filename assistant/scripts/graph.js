@@ -39,6 +39,16 @@ const BOXES = {
   dis: 'empire-districtstock@grandempirehk.com',
 };
 
+// HARD DENYLIST — mailboxes Winston must NEVER read, even though the app-only
+// creds technically could. Parker's box is off-limits by owner's rule. Match
+// is case-insensitive; add addresses here to ban more. Note: Parker still
+// appears as a sender/CC inside the deal threads in the 3 allowed boxes —
+// that's the deal context and stays. This only bans opening his mailbox.
+const DENY = new Set([
+  'mpr@grandempirehk.com',
+  'npr@grandempirehk.com',
+]);
+
 // Creds: prefer env (assistant/.env). If absent, self-source them from the
 // relay's .env.local — it's on the same machine and holds the same MS_GRAPH_*
 // values, so Winston works with ZERO manual .env setup (just git pull +
@@ -66,7 +76,17 @@ const SECRET = process.env.MS_GRAPH_CLIENT_SECRET || process.env.MS365_MCP_CLIEN
 function die(msg) { console.error('graph.js: ' + msg); process.exit(1); }
 function resolveBox(b) {
   if (!b) die('missing mailbox (spr | china | dis)');
-  return BOXES[b] || (b.includes('@') ? b : die(`unknown mailbox "${b}" (use spr|china|dis or a full address)`));
+  // Allowlist ONLY the 3 named deal boxes. Arbitrary full-address access is
+  // no longer permitted — that was the hole that let any mailbox (incl.
+  // Parker's) be opened. A named box that happens to be denied, or any
+  // address on the denylist, is refused outright.
+  const addr = BOXES[b];
+  if (!addr) {
+    if (b.includes('@') && DENY.has(b.toLowerCase())) die(`access to ${b} is banned`);
+    die(`mailbox "${b}" not allowed — Winston may only read: spr | china | dis`);
+  }
+  if (DENY.has(addr.toLowerCase())) die(`access to ${addr} is banned`);
+  return addr;
 }
 
 async function getToken() {

@@ -85,7 +85,9 @@ async function start() {
   log(`using WhatsApp Web protocol v${version.join('.')}`);
   // Quiet Baileys' internal JSON debug logging; our own log lines remain.
   let logger;
-  try { logger = require('pino')({ level: 'silent' }); } catch { /* default logger */ }
+  // WA_LOG=warn (or debug) un-silences the Baileys internals — decrypt/session
+  // errors are otherwise swallowed, which makes "connected but deaf" invisible.
+  try { logger = require('pino')({ level: process.env.WA_LOG || 'silent' }); } catch { /* default logger */ }
   const sock = makeWASocket({
     auth: state,
     version,
@@ -163,6 +165,10 @@ async function start() {
   });
 
   sock.ev.on('messages.upsert', ({ messages, type }) => {
+    // Log EVERY upsert (any type) so a message can never arrive invisibly —
+    // if WhatsApp routes self-chat as 'append' instead of 'notify', this is
+    // how we find out.
+    log(`upsert type=${type} n=${messages.length} jids=${messages.map((m) => m.key && m.key.remoteJid).join(',')}`);
     if (type !== 'notify') return;
     refreshSelfIds();
     for (const m of messages) {

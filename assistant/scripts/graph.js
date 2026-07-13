@@ -89,33 +89,51 @@ function resolveBox(b) {
   return addr;
 }
 
+// Node's fetch throws a bare "fetch failed" and hides the real reason on
+// `.cause`. Surface it so a network/DNS/TLS problem is diagnosable instead of
+// a mystery. Also catch the pre-18 "no global fetch" case explicitly.
+async function doFetch(url, opts, what) {
+  if (typeof fetch === 'undefined') {
+    die(`no global fetch — this Node is too old (need 18+). node version: ${process.version}. Upgrade node on this machine.`);
+  }
+  try {
+    return await fetch(url, opts);
+  } catch (e) {
+    const cause = e && e.cause ? ` (cause: ${e.cause.code || e.cause.message || e.cause})` : '';
+    die(`${what} network call failed: ${e.message}${cause} — check this machine's internet/DNS/proxy. node ${process.version}`);
+  }
+}
+
 async function getToken() {
   if (!CID || !TID || !SECRET) {
     die('missing creds — set MS_GRAPH_CLIENT_ID / MS_GRAPH_TENANT_ID / MS_GRAPH_CLIENT_SECRET in assistant/.env (same values as the relay)');
   }
+  // Guard against a stray newline/space in a self-sourced cred value making a
+  // malformed URL or bad request.
+  const tid = String(TID).trim(), cid = String(CID).trim(), secret = String(SECRET).trim();
   const cache = path.join(os.tmpdir(), 'winston-graph-token.json');
   try {
     const c = JSON.parse(fs.readFileSync(cache, 'utf8'));
-    if (c.exp > Date.now() + 60000 && c.cid === CID) return c.tok;
+    if (c.exp > Date.now() + 60000 && c.cid === cid) return c.tok;
   } catch { /* no cache */ }
-  const res = await fetch(`https://login.microsoftonline.com/${TID}/oauth2/v2.0/token`, {
+  const res = await doFetch(`https://login.microsoftonline.com/${tid}/oauth2/v2.0/token`, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: CID, client_secret: SECRET,
+      client_id: cid, client_secret: secret,
       scope: 'https://graph.microsoft.com/.default', grant_type: 'client_credentials',
     }),
-  });
+  }, 'token');
   const j = await res.json();
-  if (!j.access_token) die('token request failed: ' + JSON.stringify(j).slice(0, 300));
-  try { fs.writeFileSync(cache, JSON.stringify({ tok: j.access_token, exp: Date.now() + (j.expires_in - 120) * 1000, cid: CID })); } catch { /* ignore */ }
+  if (!j.access_token) die('token request rejected: ' + JSON.stringify(j).slice(0, 300));
+  try { fs.writeFileSync(cache, JSON.stringify({ tok: j.access_token, exp: Date.now() + (j.expires_in - 120) * 1000, cid })); } catch { /* ignore */ }
   return j.access_token;
 }
 
 async function graph(pathAndQuery, token) {
-  const res = await fetch('https://graph.microsoft.com/v1.0' + pathAndQuery, {
+  const res = await doFetch('https://graph.microsoft.com/v1.0' + pathAndQuery, {
     headers: { Authorization: 'Bearer ' + token, ConsistencyLevel: 'eventual' },
-  });
+  }, 'graph');
   const j = await res.json();
   if (j.error) die(`graph error (${res.status}): ${j.error.code} — ${j.error.message}`);
   return j;

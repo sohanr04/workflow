@@ -49,46 +49,58 @@ Five things, every day, without being asked:
 
 ## Deal desk — THE BOARD is the pipeline
 
-You do NOT re-derive deals from raw email — you got that wrong before, and
-there's no need: Sohan's **deals-engine** already derives every live deal
-into a board (a Supabase table) every 3 minutes, with stage, ball, and
-urgency computed for you. **Read the board; act on it.** Your reader:
+You do NOT re-derive deals from raw email — Sohan's **deals-engine** derives
+every live deal into a board (a Supabase table) every 3 minutes. It re-scans the
+mailboxes each cycle, tracks both legs (buyer↔us, us↔factory), keeps an HONEST
+per-side clock (your own nudges never reset it), and culls explicit drops.
+**Trust those parts.** Your reader, `deals.js`, adds the ONE thing the engine
+lacks — a sense of a deal's LIFE — and hands you a clean queue:
 
 ```
-node ../../scripts/deals.js today     # ball on US — the work queue
-node ../../scripts/deals.js stalled   # waiting on them, past threshold
-node ../../scripts/deals.js board 40  # all live deals, hottest first
-node ../../scripts/deals.js count     # live deals by stage
+node ../../scripts/deals.js today     # THE work queue: ball on us, actionable, FRESH FIRST
+node ../../scripts/deals.js chase      # waiting on them, overdue but still alive
+node ../../scripts/deals.js cold       # the graveyard (>14d dead) — batched, don't nag
+node ../../scripts/deals.js board 40  # lifecycle census + hottest live first
+node ../../scripts/deals.js count     # pipeline health (hot/aging/chase/cold/dormant)
 node ../../scripts/deals.js company Power   # one account
-node ../../scripts/deals.js get <deal_key>  # full detail of one deal
+node ../../scripts/deals.js get <deal_key>  # full detail + lifecycle + honest silence
 ```
 
-The board's model (trust these — the engine maintains them):
-- **stage**: interested → sourcing → quoted → negotiating → closed_won/lost
-- **ball_in_court**: us | customer | supplier (who owes the next move)
-- **is_urgent**: ball on us past the short clock. **is_stalled**: waiting on
-  them past threshold. **silent_hours**: how long since the last message.
-- A deal is one buyer thread; `get` shows both legs + the factory cost.
+**The lifecycle model `deals.js` computes (this is how you know birth/death/nudge):**
+- 🔥 **hot** — ball on us, a reply landed <3d ago → act now.
+- 🟠 **aging** — ball on us, 3–14d → still worth a move, getting old.
+- 🟡 **chase_due** — waiting on them, past the healthy window, <14d → chase.
+- 🟢 **waiting** — waiting on them, still fresh → healthy, leave it.
+- 🪦 **cold** (14–30d) / 💀 **dormant** (30d+) — the counterparty went silent →
+  **likely DEAD.** Re-read + ASK before any action; NEVER nag one-by-one.
 
-**CRITICAL — the board is great at BIRTH, blind to LIFECYCLE.** It spots a deal
-when a buyer replies to an offer, but then it ages that snapshot on a CLOCK; it
-does NOT re-read the thread. So its "ball on us 5d, chase" is often WRONG — the
-deal already died, was handled, or is waiting on the factory. **Treat the board
-as a SUSPECT LIST, never the truth. Re-read the thread before you say anything.**
+**Why this matters — the engine has NO concept of natural death.** A deal it
+still flags `is_urgent` can be a MONTH-old corpse (they replied once, we never
+closed it, it never got an explicit "drop"). Nearly HALF the board is cold/dead
+weight the raw `is_urgent`/`stalled`/`silent_hours` fields lie about — they show
+those corpses as live. So: **use `today`/`chase`/`cold`, not raw `urgent`.** The
+lifecycle tag is the truth about whether a deal is alive.
 
-Before you nudge Sohan about ANY deal, re-ground it:
+**The engine's real blind spots (be skeptical of these specific fields):**
+- **`stage`** is best-effort (the engine's author says "eyeball it") — verify.
+- **Buyer-side thread linking is a subject/style-code GUESS**, not conversation-
+  anchored. It can attach the wrong thread or miss that Sohan already replied →
+  a false "ball on us." When a `today` item looks wrong, that's usually why.
+- Team-initiated drops (Sohan told a buyer "kindly drop") aren't auto-culled.
+
+**Before you nudge Sohan about ANY `today`/`chase` deal, re-ground it:**
 ```
 node ../../scripts/dealctx.js <style-code>   # full thread (3 boxes) + memory + judge
 ```
-Then decide from the THREAD, not the timer:
-- Real current action, ball genuinely on us → ONE text: quote the actual last
+Then decide from the THREAD, not the tag:
+- Ball genuinely on us, real action pending → ONE text: quote the actual last
   message, name the exact next move, attach a ready-to-send draft.
-- Silent 2-3d+ and you genuinely can't tell if it's dead → **ASK Sohan**, quoting
-  the last exchange. **Default to ASK when unsure — never a blind timer-chase.**
+- Genuinely can't tell if it's alive → **ASK Sohan**, quoting the last exchange.
+  **Default to ASK when unsure — never a blind chase, never auto-close.**
 - Already handled / waiting on them / dead → stay silent (note if dead).
 
-Focus on FRESH movement (low silent_hours). Deals silent >2 weeks are cold
-backlog — surface as a batch count, never one-by-one.
+Cold/dormant deals are NOT the work queue: surface them as a batch
+("~78 cold >14d — bulk-review or revive any?"), never one at a time.
 
 `memory/deals.md` is now your **working layer on top of the board** — NOT the
 source of truth for what deals exist. Use it for what the board doesn't hold:

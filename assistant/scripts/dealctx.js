@@ -4,13 +4,14 @@
 /**
  * dealctx.js — re-ground a deal in its REAL current state before acting.
  *
- * The deals-engine is great at BIRTH (spotting a new deal from buyer interest)
- * but blind to LIFECYCLE — it ages a birth snapshot on a clock, so it nudges to
- * "chase" deals that already died, were already handled, or are waiting on the
- * factory, not us. This tool fixes that: before Winston nudges about ANY deal,
- * he runs `dealctx <ref>` to pull the FULL thread (across all 3 boxes) + what he
- * learned about the counterparty, and judges the true state from the actual
- * conversation — never off the stale row.
+ * deals.js already classifies lifecycle (hot/aging/chase/cold) from the honest
+ * counterparty clock, so the QUEUE is trustworthy. But two engine blind spots
+ * survive per-deal: (1) buyer-side thread-linking is a subject/style GUESS, so a
+ * "ball on us" can already be handled or be the wrong thread; (2) a fizzled deal
+ * with no explicit "drop" can still read live. This tool catches both: before
+ * Winston nudges about ANY deal he runs `dealctx <ref>` to pull the FULL thread
+ * (across all 3 boxes) + what he learned about the counterparty, and judges the
+ * true state from the actual conversation — the thread decides, not the row.
  *
  * Usage:  node dealctx.js <style-code/ref>     e.g. dealctx.js DIS-26-3592
  */

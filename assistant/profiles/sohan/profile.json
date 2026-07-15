@@ -24,6 +24,7 @@
     "Bash(node ../../scripts/dealctx.js:*)",
     "Bash(node ../../scripts/brain.js:*)",
     "Bash(node ../../scripts/evolve.js:*)",
+    "Bash(node ../../scripts/dealsheet.js:*)",
     "Bash(npx @gongrzhe/server-gmail-autoauth-mcp:*)",
     "Bash(mkdir:*)",
     "Bash(ls:*)",
@@ -60,7 +61,7 @@
   "scheduled": [
     {
       "time": "07:30",
-      "prompt": "Deal-desk morning brief, delivered as Winston. Read: `node ../../scripts/deals.js count` (pipeline health — hot/aging/chase/cold), `node ../../scripts/deals.js today` (actionable ball-on-us, fresh first), `node ../../scripts/deals.js chase` (waiting-on-them, overdue but alive). Trust the lifecycle tags — cold/dormant are dead weight, not work. Then text Sohan this exact structure, tight: (a) TOP 3 — the three hottest 🔥 deals (ball on us, freshest reply), each one line: company/ref · the single action · $ at stake if known. (b) BALL ON US — count of genuinely actionable (hot+aging), and the cold-backlog count as a one-liner ('+78 cold >14d — say the word to bulk-review'). (c) CHASES DUE — count of overdue-but-alive threads, chase draft ready on request. (d) ONE LINE of state: actionable-vs-dead split + position vs the monthly target in goals.md (if no target set, remind once a week max). A trader's morning note, not a soliloquy. No life admin, no filler."
+      "prompt": "Deal-desk morning brief, delivered as Winston. Read: `node ../../scripts/deals.js count` (pipeline health — hot/aging/chase/cold), `node ../../scripts/deals.js today` (actionable ball-on-us, fresh first), `node ../../scripts/deals.js chase` (waiting-on-them, overdue but alive). Trust the lifecycle tags — cold/dormant are dead weight, not work. Then text Sohan this exact structure, tight: (a) TOP 3 — the three hottest 🔥 deals (ball on us, freshest reply), each one line: company/ref · the single action · $ at stake if known. (b) BALL ON US — count of genuinely actionable (hot+aging), and the cold-backlog count as a one-liner ('+78 cold >14d — say the word to bulk-review'). (c) CHASES DUE — count of overdue-but-alive threads, chase draft ready on request. (d) ONE LINE of state: actionable-vs-dead split + position vs the monthly target in goals.md (if no target set, remind once a week max). A trader's morning note, not a soliloquy. No life admin, no filler. FINALLY: refresh the Excel ledger — `node ../../scripts/dealsheet.js` — so memory/GE-Deals.xlsx always reflects today's board; mention it's updated in one short line."
     },
     {
       "time": "18:00",

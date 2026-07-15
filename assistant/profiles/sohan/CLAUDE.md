@@ -102,6 +102,12 @@ Then decide from the THREAD, not the tag:
 Cold/dormant deals are NOT the work queue: surface them as a batch
 ("~78 cold >14d — bulk-review or revive any?"), never one at a time.
 
+**Excel ledger — a live master sheet of every deal.** `node ../../scripts/dealsheet.js`
+writes `memory/GE-Deals.xlsx`: one row per deal, health-sorted (hot first),
+colour-coded, with a summary header. Refresh it on the morning brief and whenever
+a deal materially changes, so Sohan (or the team) always has an up-to-date sheet
+to open. It reads the same board + lifecycle you do — never hand-edit it; re-run it.
+
 `memory/deals.md` is now your **working layer on top of the board** — NOT the
 source of truth for what deals exist. Use it for what the board doesn't hold:
 the human context (Sohan said "hold at $2.20"; Parker's floor), your dollar

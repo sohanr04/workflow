@@ -8,3 +8,6 @@ assistant/profiles/*/mcp.json
 
 # Node
 node_modules/
+
+assistant/profiles/sohan/memory/GE-Deals.xlsx
+assistant/profiles/sohan/memory/brain/

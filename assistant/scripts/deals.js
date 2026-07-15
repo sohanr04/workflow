@@ -58,50 +58,9 @@ const LIVE = 'stage=not.in.(closed_won,closed_lost)';
 const COLS = 'deal_key,stage,current_leg,ball_in_court,last_actor,silent_hours,is_urgent,is_stalled,negotiation_rounds,buyer_email,buyer_name,company,supplier_name,supplier_domain,style,qty,offer_subject,intent,opened_at,buyer_side,factory_side';
 
 // ── LIFECYCLE MODEL — knows birth, death, and when to nudge ──────────────────
-// The engine births a deal well and tracks legs, but it has NO concept of
-// natural death: a ball-on-us deal silent for 700h (a MONTH) still shows
-// 🔴URGENT. That's a corpse, not urgent. We reclassify from the HONEST
-// counterparty clock — how long since the side we're waiting on actually spoke
-// — never our own nudge (the engine's top-level silent_hours resets when WE
-// send, so it lies about true silence on the waiting-on-them legs).
-const HOT_MAX_H = 72;        // ball on us, they replied < 3d ago → act now
-const COLD_MIN_H = 336;      // 14d counterparty silence → likely dead, review/ask, DON'T nag
-const DORMANT_MIN_H = 720;   // 30d silence → dead backlog, batch only
-const WAIT_CUST_H = 48;      // healthy quiet on a buyer (engine's threshold)
-const WAIT_SUP_H = 24;       // healthy quiet on a supplier
-
-// Honest silence = hours since the RELEVANT counterparty last spoke.
-// Ball on us → they spoke last, so top-level silent_hours IS honest.
-// Ball on them → use the side's them_last_at (our nudges never reset it).
-function themSilentHours(d, nowMs) {
-  if (d.ball_in_court === 'us') return d.silent_hours;
-  const side = d.ball_in_court === 'supplier' ? d.factory_side : d.buyer_side;
-  const t = side && side.them_last_at ? new Date(side.them_last_at).getTime() : null;
-  return t != null ? Math.round(((nowMs - t) / 3_600_000) * 10) / 10 : d.silent_hours;
-}
-
-// The single source of truth for a deal's real state.
-//   hot       ball on us, fresh reply waiting        → nudge, act now
-//   aging     ball on us, 3–14d, still worth a move  → nudge, getting old
-//   chase_due waiting on them, past healthy, < 14d   → chase draft ready
-//   waiting   waiting on them, within healthy window → leave it, healthy
-//   cold      14–30d counterparty silence            → likely dead: re-read + ASK, never nag
-//   dormant   30d+ silence                           → dead backlog, batch count only
-//   dropped   explicitly ended                       → off the board
-function lifecycle(d, nowMs) {
-  if (d.stage === 'closed_lost') return 'dropped';
-  if (d.stage === 'closed_won') return 'won';
-  const ts = themSilentHours(d, nowMs);
-  if (ts == null) return 'waiting';
-  if (ts >= DORMANT_MIN_H) return 'dormant';
-  if (ts >= COLD_MIN_H) return 'cold';
-  if (d.ball_in_court === 'us') return ts <= HOT_MAX_H ? 'hot' : 'aging';
-  const legThresh = d.ball_in_court === 'supplier' ? WAIT_SUP_H : WAIT_CUST_H;
-  return ts <= legThresh ? 'waiting' : 'chase_due';
-}
-const ACTIONABLE = new Set(['hot', 'aging', 'chase_due']); // the real nudge queue
-const DEADish = new Set(['cold', 'dormant']);              // never nag; batch/ask
-const LC_TAG = { hot: '🔥hot', aging: '🟠aging', chase_due: '🟡chase', waiting: '🟢wait', cold: '🪦cold', dormant: '💀dormant', dropped: '⚰️dropped', won: '✅won' };
+// Shared with dealsheet.js so the board reader and the Excel ledger can never
+// disagree. (Full explanation lives in lifecycle.js.)
+const { themSilentHours, lifecycle, ACTIONABLE, DEADish, LC_TAG } = require('./lifecycle');
 
 async function q(qs) {
   if (!URL || !KEY) die('missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (self-sourced from the relay .env.local, or set in assistant/.env)');

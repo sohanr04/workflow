@@ -1,0 +1,33 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: Loading
+        - progressbar [ref=e8]
+      - main [ref=e310]:
+        - generic [ref=e311]:
+          - img [ref=e313]
+          - heading "Error" [level=1] [ref=e319]
+        - generic [ref=e328]: Sorry, we could not create your Google Account.
+        - button "Next" [ref=e334] [cursor=pointer]:
+          - generic [ref=e337]: Next
+    - contentinfo [ref=e64]:
+      - combobox "Change language English (United States)" [ref=e68] [cursor=pointer]:
+        - generic:
+          - generic: English (United States)
+        - generic:
+          - img
+      - list [ref=e70]:
+        - listitem [ref=e71]:
+          - link "Open Google Account Help Center (external, opens in a new window)" [ref=e72] [cursor=pointer]:
+            - /url: https://support.google.com/accounts?hl=en-US&p=account_iph
+            - text: Help
+        - listitem [ref=e73]:
+          - link "Privacy Policy (external, opens in a new window)" [ref=e74] [cursor=pointer]:
+            - /url: https://accounts.google.com/TOS?loc=SG&hl=en-US&privacy=true
+            - text: Privacy
+        - listitem [ref=e75]:
+          - link "Google Terms of Service (external, opens in a new window)" [ref=e76] [cursor=pointer]:
+            - /url: https://accounts.google.com/TOS?loc=SG&hl=en-US
+            - text: Terms
+  - generic [ref=e339]: Error

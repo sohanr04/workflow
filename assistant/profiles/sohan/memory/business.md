@@ -40,12 +40,46 @@ lookbooks, "raise the order".
 
 ## The states Winston tracks (deals.md)
 
-lead → quoting → negotiating → sample → confirmed → shipping → closed
-(or dead). A deal is **BORN** when a supplier sends an offer or a buyer
-requests a type Sohan sources for. It **DIES** when the buyer passes, the
-gap won't close, the stock sells elsewhere, or it goes cold. Dead deals go
-to the archive with reason + last price — never delete; the losses teach
-pricing and which buyers flake.
+lead → quoting → negotiating → sample → confirmed → shipping → closed (or dead).
+
+**THE DEAL LIFECYCLE LAW (Sohan, 2026-07-15) — this governs everything:**
+- **BORN = a BUYER REPLIES to an offer we sent.** Only that. The relay blasts
+  offers constantly; those are NOT deals — we've already offered, we're always
+  willing to sell. A buyer replies only when it's a style they actually need —
+  **that reply is the birth.** A supplier offer alone is a lead to match, not a deal.
+- **LIVE = never stops until explicit death.** The instant it's born I chase it
+  relentlessly (both legs + sample legs) and it NEVER goes cold or falls off the
+  board. **Silence is NOT death — silence is an overdue chase.**
+- **DEAD = only explicit.** The buyer says drop, OR Sohan says drop. Nothing else
+  kills a deal — not silence, not age, not "it went cold." (OLD rule "goes cold →
+  archive" was WRONG and is retracted.)
+- Dead deals → archive with reason + last price; never delete. The losses teach
+  pricing and which buyers flake (e.g. Lecia shops samples).
+
+## Winston's Deal-Desk OS (board's structure + LLM brain)
+
+Source of the model: the deal board's own code — `grand-empire-stock-deals/lib/
+deals/derive.ts` (ball/legs/staleness), `chase.ts` (urgent pulse), and the `deals`
+schema. Mirror its RIGOR; add intelligence it can't have.
+
+**Adopt from the board (the deterministic spine):**
+- Deal = **buyer × style**; born ONLY on a buyer reply (buy|question). See lifecycle law above.
+- **Ball = who sent last, per leg.** Their reply → ball US. We sent → waiting on them.
+- Clock = last message; **ball-on-US past the short clock = URGENT** (the silent killer).
+- Two linked legs per deal: **buyer thread** (sell) + **factory_check** (supplier price / buy).
+
+**Add the LLM layer (why I beat the cron):**
+1. **Chase BOTH sides — including the supplier on PRICE.** Draft the factory squeeze
+   ("need $X to close vs the buyer's $Y"), not just "relay quote." Buy leg = margin.
+2. **Read the words, not just timestamps** — hard-no vs soft-maybe vs "need a sample"
+   (a sample leg being born). Set ball/stage from meaning, not just who emailed last.
+3. **Margin math** — (sell − buy) × qty − freight; rank the board by DOLLARS, biggest first.
+4. **Carry scars** — apply per-counterparty patterns (Lecia shops samples → PO before sample).
+5. **Samples = their own two legs** — supplier makes/ships · buyer reviews/confirms.
+6. **Draft the chase** — ready-to-send, quoting the last email, in Sohan's voice. He hits send.
+
+**The loop:** sweep 3 boxes → derive ball/legs/margin per deal → surface only ball-on-US
+by dollars (+ subject line) → draft the chase → never let a live deal go silent till explicit drop.
 
 ## The desk playbook — how Winston wins deals (general trade craft)
 

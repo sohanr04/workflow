@@ -1,0 +1,10 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Stock tracker" [level=1] [ref=e4]
+      - generic [ref=e5]: 0 live deals
+    - generic [ref=e6]:
+      - generic [ref=e7]: connecting…
+      - generic [ref=e8]: sorted most stale first · Your move = they replied · grey = waiting on them
+    - generic [ref=e9]: No live deals (or missing/invalid key in the URL).
+  - alert [ref=e10]

@@ -1,0 +1,59 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: Loading
+        - progressbar [active] [ref=e8]
+      - main [ref=e246]:
+        - generic [ref=e247]:
+          - img [ref=e249]
+          - generic [ref=e254]:
+            - heading "Create a strong password" [level=1] [ref=e255]
+            - generic [ref=e256]: Create a strong password with a mix of letters, numbers and symbols
+        - generic [ref=e258]:
+          - radiogroup [ref=e192]:
+            - generic [ref=e194]:
+              - radio "alfredramchandani@gmail.com" [checked] [ref=e198] [cursor=pointer]
+              - generic [ref=e203] [cursor=pointer]: alfredramchandani@gmail.com
+            - generic [ref=e205]:
+              - radio "ramchandanialfred@gmail.com" [ref=e209] [cursor=pointer]
+              - generic [ref=e214] [cursor=pointer]: ramchandanialfred@gmail.com
+            - generic [ref=e216]:
+              - radio "Create your own Gmail address" [ref=e220] [cursor=pointer]
+              - generic [ref=e225] [cursor=pointer]: Create your own Gmail address
+          - generic [ref=e265]:
+            - generic [ref=e268]:
+              - generic [ref=e273]:
+                - textbox "Password" [ref=e274]
+                - generic: Password
+              - generic [ref=e281]:
+                - textbox "Confirm" [ref=e282]
+                - generic: Confirm
+            - generic [ref=e289]:
+              - generic [ref=e292] [cursor=pointer]:
+                - checkbox "Show password" [ref=e293]
+                - generic:
+                  - img
+              - generic [ref=e296] [cursor=pointer]: Show password
+        - button "Next" [ref=e302]:
+          - generic [ref=e305]: Next
+    - contentinfo [ref=e64]:
+      - combobox "Change language English (United States)" [ref=e68] [cursor=pointer]:
+        - generic:
+          - generic: English (United States)
+        - generic:
+          - img
+      - list [ref=e70]:
+        - listitem [ref=e71]:
+          - link "Open Google Account Help Center (external, opens in a new window)" [ref=e72] [cursor=pointer]:
+            - /url: https://support.google.com/accounts?hl=en-US&p=account_iph
+            - text: Help
+        - listitem [ref=e73]:
+          - link "Privacy Policy (external, opens in a new window)" [ref=e74] [cursor=pointer]:
+            - /url: https://accounts.google.com/TOS?loc=SG&hl=en-US&privacy=true
+            - text: Privacy
+        - listitem [ref=e75]:
+          - link "Google Terms of Service (external, opens in a new window)" [ref=e76] [cursor=pointer]:
+            - /url: https://accounts.google.com/TOS?loc=SG&hl=en-US
+            - text: Terms
+  - generic [ref=e308]: Create a strong password Create a strong password with a mix of letters, numbers and symbols

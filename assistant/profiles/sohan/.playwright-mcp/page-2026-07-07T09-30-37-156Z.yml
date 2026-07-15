@@ -1,0 +1,47 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: Loading
+        - progressbar [ref=e8]
+      - main [ref=e171]:
+        - generic [ref=e172]:
+          - img [ref=e174]
+          - generic [ref=e179]:
+            - heading "Create an email address" [level=1] [ref=e180]
+            - generic [ref=e181]: Create a Gmail address for signing in to your Google Account
+        - radiogroup [ref=e192]:
+          - generic [ref=e194]:
+            - radio "alfredramchandani@gmail.com" [checked] [active] [ref=e198] [cursor=pointer]
+            - generic [ref=e203] [cursor=pointer]: alfredramchandani@gmail.com
+          - generic [ref=e205]:
+            - radio "ramchandanialfred@gmail.com" [ref=e209] [cursor=pointer]
+            - generic [ref=e214] [cursor=pointer]: ramchandanialfred@gmail.com
+          - generic [ref=e216]:
+            - radio "Create your own Gmail address" [ref=e220] [cursor=pointer]
+            - generic [ref=e225] [cursor=pointer]: Create your own Gmail address
+        - generic [ref=e227]:
+          - button "Next" [ref=e231]:
+            - generic [ref=e234]: Next
+          - button "Use your existing email" [ref=e238]:
+            - generic [ref=e241]: Use your existing email
+    - contentinfo [ref=e64]:
+      - combobox "Change language English (United States)" [ref=e68] [cursor=pointer]:
+        - generic:
+          - generic: English (United States)
+        - generic:
+          - img
+      - list [ref=e70]:
+        - listitem [ref=e71]:
+          - link "Open Google Account Help Center (external, opens in a new window)" [ref=e72] [cursor=pointer]:
+            - /url: https://support.google.com/accounts?hl=en-US&p=account_iph
+            - text: Help
+        - listitem [ref=e73]:
+          - link "Privacy Policy (external, opens in a new window)" [ref=e74] [cursor=pointer]:
+            - /url: https://accounts.google.com/TOS?loc=SG&hl=en-US&privacy=true
+            - text: Privacy
+        - listitem [ref=e75]:
+          - link "Google Terms of Service (external, opens in a new window)" [ref=e76] [cursor=pointer]:
+            - /url: https://accounts.google.com/TOS?loc=SG&hl=en-US
+            - text: Terms
+  - generic [ref=e243]: Create an email address Create a Gmail address for signing in to your Google Account

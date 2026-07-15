@@ -1,0 +1,170 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * book.js — WINSTON'S OWN deal book. His system, his truth.
+ *
+ * Winston does NOT read the deals-engine board. He reads the actual email
+ * threads (graph.js) and maintains this book himself — using his own judgment
+ * to match a message to a deal, set who owes the next move, and record prices.
+ * That's more robust than the engine's fuzzy matching, and it's his: one JSON
+ * file in his memory, in git-managed logic, no external service to break.
+ *
+ * Lifecycle is computed from the honest clock HE keeps: `ball` (who owes the
+ * move) + `since` (when the ball last moved into that court). No snapshot aged
+ * blindly — Winston updates `since` from the real last message each time he
+ * reads a thread, so a deal's death is visible, not guessed.
+ *
+ * Store: profiles/sohan/memory/book.json  (WINSTON_BOOK overrides)
+ *
+ * Commands (run from profiles/sohan/):
+ *   book.js add  <ref> --product "..." --qty 5000 --buyer "Lecia/Choice" --supplier "Cherry/Gbest" \
+ *                      --ball us|buyer|supplier --stage quoting --sell 3.20 --buy 2.45 --note "born from DIS blast"
+ *   book.js set  <ref> --ball supplier --since now --buy 1.80 --stage negotiating --next "chase Cherry $1.80"
+ *   book.js note <ref> "Cherry came back at $2.45"
+ *   book.js get  <ref>
+ *   book.js today                 # actionable queue from HIS book (hot/aging/chase), fresh first
+ *   book.js list [hot|chase|cold|all]
+ *   book.js stats                 # health census
+ *   book.js close <ref> --outcome won|lost --reason "gap wouldn't close"
+ *   book.js sheet [path]          # export the book → Excel (default memory/GE-Deals.xlsx)
+ */
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+
+const BOOK = process.env.WINSTON_BOOK || path.join(process.cwd(), 'memory', 'book.json');
+const now = () => new Date().toISOString();
+const nowMs = () => Date.now();
+
+function load() { try { return JSON.parse(fs.readFileSync(BOOK, 'utf8')); } catch { return { deals: {} }; } }
+function save(b) { fs.mkdirSync(path.dirname(BOOK), { recursive: true }); fs.writeFileSync(BOOK, JSON.stringify(b, null, 2)); }
+function die(m) { console.error('book.js: ' + m); process.exit(1); }
+
+function flag(args, name) { const i = args.indexOf('--' + name); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : undefined; }
+function tsOf(v) { if (!v) return undefined; if (v === 'now') return now(); const d = new Date(v); return isNaN(d) ? now() : d.toISOString(); }
+
+// ── lifecycle — Winston's honest clock (ball + since), same thresholds as everything ──
+const HOT = 72, COLD = 336, DORMANT = 720, WAIT_C = 48, WAIT_S = 24;
+function lifecycle(d) {
+  if (d.closed) return d.outcome === 'won' ? 'won' : 'dropped';
+  const h = (nowMs() - new Date(d.since || d.opened_at || now()).getTime()) / 3_600_000;
+  if (h >= DORMANT) return 'dormant';
+  if (h >= COLD) return 'cold';
+  if (d.ball === 'us') return h <= HOT ? 'hot' : 'aging';
+  const t = d.ball === 'supplier' ? WAIT_S : WAIT_C;
+  return h <= t ? 'waiting' : 'chase_due';
+}
+function silentH(d) { return Math.round(((nowMs() - new Date(d.since || d.opened_at || now()).getTime()) / 3_600_000) * 10) / 10; }
+const TAG = { hot: '🔥hot', aging: '🟠aging', chase_due: '🟡chase', waiting: '🟢wait', cold: '🪦cold', dormant: '💀dormant', won: '✅won', dropped: '⚰️dropped' };
+const ORDER = ['hot', 'aging', 'chase_due', 'waiting', 'cold', 'dormant', 'won', 'dropped'];
+const ACTION = new Set(['hot', 'aging', 'chase_due']);
+const fmtH = (h) => h == null ? '?' : (h < 24 ? `${Math.round(h)}h` : `${Math.round(h / 24)}d`);
+
+// spread if both legs known
+function spread(d) { const b = parseFloat(d.buy), s = parseFloat(d.sell), q = parseFloat(d.qty); if (b && s && q) return Math.round((s - b) * q); return null; }
+
+function applyFields(d, args) {
+  const set = (k, v) => { if (v !== undefined) d[k] = v; };
+  set('product', flag(args, 'product')); set('qty', flag(args, 'qty'));
+  set('buyer', flag(args, 'buyer')); set('company', flag(args, 'company')); set('buyer_email', flag(args, 'buyer-email'));
+  set('supplier', flag(args, 'supplier')); set('supplier_domain', flag(args, 'supplier-domain'));
+  set('stage', flag(args, 'stage')); set('next', flag(args, 'next'));
+  const buy = flag(args, 'buy'), sell = flag(args, 'sell'), bt = flag(args, 'buy-target'), st = flag(args, 'sell-target');
+  set('buy', buy); set('sell', sell); set('buy_target', bt); set('sell_target', st);
+  const ball = flag(args, 'ball');
+  if (ball) { if (!['us', 'buyer', 'supplier'].includes(ball)) die('ball must be us|buyer|supplier'); if (ball !== d.ball) d.since = tsOf(flag(args, 'since')) || now(); d.ball = ball; }
+  const since = flag(args, 'since'); if (since) d.since = tsOf(since);
+}
+
+function line(ref, d) {
+  const lc = lifecycle(d);
+  const sp = spread(d);
+  return `${(TAG[lc] || lc).padEnd(9)} ${(d.stage || '?').padEnd(11)} ball=${(d.ball || '?').padEnd(9)} ${fmtH(silentH(d)).padStart(4)}  ${ref} · ${(d.product || '').slice(0, 34)}${d.qty ? ' · ' + d.qty : ''}${sp ? `  ($${sp.toLocaleString()})` : ''}${d.next ? `  → ${d.next}` : ''}`;
+}
+
+async function sheet(outArg) {
+  const ExcelJS = require('exceljs');
+  const b = load();
+  const out = path.resolve(outArg || path.join(process.cwd(), 'memory', 'GE-Deals.xlsx'));
+  const rows = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) })).sort((a, x) => ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
+  const wb = new ExcelJS.Workbook(); wb.creator = 'Winston';
+  const ws = wb.addWorksheet('Deals', { views: [{ state: 'frozen', ySplit: 3 }] });
+  const live = rows.filter((r) => !['won', 'dropped'].includes(r.lc));
+  const act = live.filter((r) => ACTION.has(r.lc)).length;
+  ws.mergeCells('A1:M1'); ws.getCell('A1').value = "Grand Empire — Winston's Deal Book"; ws.getCell('A1').font = { size: 15, bold: true, name: 'Georgia' };
+  ws.mergeCells('A2:M2'); ws.getCell('A2').value = `${live.length} live · ${act} actionable · updated ${new Date().toLocaleString()}`; ws.getCell('A2').font = { size: 10, color: { argb: 'FF8B8175' } };
+  const H = ['Health', 'Ref', 'Product', 'Qty', 'Buyer', 'Supplier', 'Stage', 'Ball', 'Silent', 'Buy', 'Sell', 'Spread', 'Next'];
+  const hr = ws.addRow(H); hr.font = { bold: true, size: 10 };
+  hr.eachCell((c) => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDE7DC' } }; });
+  const FILL = { hot: 'FFFCE9D6', aging: 'FFF6E7CE', chase_due: 'FFFBF3D2', waiting: 'FFE7F0E4', cold: 'FFEDEAE4', dormant: 'FFE4E0DA', won: 'FFDDEBDD', dropped: 'FFEFE1DE' };
+  for (const { ref, d, lc } of rows) {
+    const r = ws.addRow([TAG[lc] || lc, ref, (d.product || '').slice(0, 50), d.qty || '', d.buyer || '', d.supplier || '', d.stage || '', d.ball || '', fmtH(silentH(d)), d.buy || '', d.sell || '', spread(d) || '', d.next || '']);
+    if (FILL[lc]) r.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: FILL[lc] } };
+  }
+  ws.columns = [{ width: 11 }, { width: 15 }, { width: 40 }, { width: 8 }, { width: 20 }, { width: 18 }, { width: 12 }, { width: 9 }, { width: 8 }, { width: 8 }, { width: 8 }, { width: 10 }, { width: 32 }];
+  ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: H.length } };
+  await wb.xlsx.writeFile(out);
+  console.log(`book → ${out} (${rows.length} deals, ${act} actionable)`);
+}
+
+const [cmd, ...args] = process.argv.slice(2);
+const ref = args[0];
+
+if (cmd === 'add') {
+  if (!ref) die('usage: add <ref> --product ... --ball us|buyer|supplier ...');
+  const b = load();
+  const d = b.deals[ref] || { opened_at: now(), history: [] };
+  applyFields(d, args.slice(1));
+  if (!d.ball) { d.ball = 'us'; d.since = now(); }
+  if (!d.since) d.since = now();
+  const nt = flag(args.slice(1), 'note'); if (nt) d.history.push({ ts: now(), text: nt });
+  b.deals[ref] = d; save(b);
+  console.log('added/updated ' + ref + '  [' + TAG[lifecycle(d)] + ']');
+} else if (cmd === 'set') {
+  if (!ref) die('usage: set <ref> --field val');
+  const b = load(); const d = b.deals[ref]; if (!d) die('no deal ' + ref + ' (use add)');
+  const before = { ball: d.ball, stage: d.stage, buy: d.buy, sell: d.sell };
+  applyFields(d, args.slice(1));
+  const chg = Object.entries(before).filter(([k, v]) => d[k] !== v).map(([k]) => `${k}→${d[k]}`);
+  if (chg.length) (d.history = d.history || []).push({ ts: now(), text: chg.join(', ') });
+  const nt = flag(args.slice(1), 'note'); if (nt) (d.history = d.history || []).push({ ts: now(), text: nt });
+  save(b); console.log('updated ' + ref + '  [' + TAG[lifecycle(d)] + ']' + (chg.length ? '  ' + chg.join(', ') : ''));
+} else if (cmd === 'note') {
+  const b = load(); const d = b.deals[ref]; if (!d) die('no deal ' + ref);
+  (d.history = d.history || []).push({ ts: now(), text: args.slice(1).join(' ') }); save(b); console.log('noted.');
+} else if (cmd === 'get') {
+  const b = load(); const d = b.deals[ref]; if (!d) die('no deal ' + ref);
+  console.log(`# ${ref} · ${TAG[lifecycle(d)]} · silent ${fmtH(silentH(d))} · ball ${d.ball}`);
+  console.log(JSON.stringify(d, null, 2));
+} else if (cmd === 'close') {
+  const b = load(); const d = b.deals[ref]; if (!d) die('no deal ' + ref);
+  d.closed = true; d.outcome = flag(args.slice(1), 'outcome') || 'lost';
+  (d.history = d.history || []).push({ ts: now(), text: `closed ${d.outcome}: ${flag(args.slice(1), 'reason') || ''}` });
+  save(b); console.log(`closed ${ref} (${d.outcome}).`);
+} else if (cmd === 'today') {
+  const b = load();
+  const rows = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) })).filter((r) => ACTION.has(r.lc)).sort((a, x) => ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
+  console.log(`# WINSTON'S BOOK — ${rows.length} actionable (his own tracking, fresh first)`);
+  for (const { ref, d } of rows) console.log(line(ref, d));
+} else if (cmd === 'list') {
+  const b = load(); const f = ref;
+  let rows = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) }));
+  if (f === 'hot') rows = rows.filter((r) => ['hot', 'aging'].includes(r.lc));
+  else if (f === 'chase') rows = rows.filter((r) => r.lc === 'chase_due');
+  else if (f === 'cold') rows = rows.filter((r) => ['cold', 'dormant'].includes(r.lc));
+  else if (f && f !== 'all') rows = rows.filter((r) => r.lc === f);
+  rows.sort((a, x) => ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
+  console.log(`# book${f ? ' (' + f + ')' : ''} — ${rows.length}`);
+  for (const { ref, d } of rows) console.log(line(ref, d));
+} else if (cmd === 'stats') {
+  const b = load(); const by = {}; let n = 0;
+  for (const d of Object.values(b.deals)) { const lc = lifecycle(d); by[lc] = (by[lc] || 0) + 1; n++; }
+  console.log(`# Winston's book — ${n} deals`);
+  console.log('# ' + ORDER.filter((k) => by[k]).map((k) => `${TAG[k]} ${by[k]}`).join(' · '));
+} else if (cmd === 'sheet') {
+  sheet(ref).catch((e) => die(e.message));
+} else {
+  console.log("book.js — Winston's own deal book. commands: add | set | note | get | today | list [hot|chase|cold] | stats | close | sheet");
+}

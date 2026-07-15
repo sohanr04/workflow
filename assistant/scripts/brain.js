@@ -43,8 +43,11 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 
-const MEM = process.env.WINSTON_MEM_DIR ||
-  path.join(os.homedir(), '.openclaw/workspace/omoc_winston/memory');
+// Memory lives with the gateway persona (Winston runs from profiles/sohan/, so
+// this resolves to profiles/sohan/memory/brain — beside his other memory).
+// WINSTON_MEM_DIR overrides. The old ~/.openclaw path is dead (OpenClaw can't
+// use the sub); we run on the gateway now.
+const MEM = process.env.WINSTON_MEM_DIR || path.join(process.cwd(), 'memory', 'brain');
 const LESSONS = path.join(MEM, 'lessons.jsonl');
 const PLAYS = path.join(MEM, 'plays.json');
 const HALF_LIFE_DAYS = Number(process.env.WINSTON_HALFLIFE_DAYS || 30); // recency decay

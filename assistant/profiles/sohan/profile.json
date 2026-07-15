@@ -4,6 +4,7 @@
   "allowedUserIds": [],
   "permissionMode": "acceptEdits",
   "model": "claude-opus-4-8",
+  "modelFallbacks": ["claude-sonnet-4-6"],
   "allowedTools": [
     "Read",
     "Write",
@@ -20,6 +21,9 @@
     "Bash(node ../../scripts/deals.js:*)",
     "Bash(node scripts/deals.js:*)",
     "Bash(node assistant/scripts/deals.js:*)",
+    "Bash(node ../../scripts/dealctx.js:*)",
+    "Bash(node ../../scripts/brain.js:*)",
+    "Bash(node ../../scripts/evolve.js:*)",
     "Bash(npx @gongrzhe/server-gmail-autoauth-mcp:*)",
     "Bash(mkdir:*)",
     "Bash(ls:*)",
@@ -46,6 +50,11 @@
       "23:00",
       "07:15"
     ],
+    "gate": {
+      "command": "node ../../scripts/deals.js pending",
+      "min": 1,
+      "timeoutSeconds": 45
+    },
     "prompt": "Silent deal-desk patrol as Winston — Sohan did NOT message you. THE BOARD IS A SUSPECT LIST, NOT THE TRUTH. The deals-engine spots a deal being BORN well, but then ages a birth snapshot on a CLOCK — it does NOT re-read the thread — so its 'ball on us, chase' is often wrong (the deal already died, was handled, or waits on the factory). NEVER nudge off a board row. Run IN ORDER: (1) `node ../../scripts/deals.js today` + `node ../../scripts/deals.js stalled` — these are CANDIDATES, not facts. (2) Read memory/notes.md patrol log; skip anything already nudged today. (3) FRESH first: low silent_hours = live/chaseable; deals silent >2wks (≈336h+) are cold backlog — mention once as a batch count ('47 intents >2wks — want the list?'), never one-by-one. (4) For each FRESH candidate leak, RE-GROUND before doing anything: `node ../../scripts/dealctx.js <style-code>` — it pulls the full thread across all 3 boxes + what you learned. The thread is the truth. Then decide FROM THE THREAD: (a) real current action, ball genuinely on us → ONE text: quote the actual last message + the exact next move + a ready-to-send draft (lead with dollars if a price/qty is known); (b) silent 2-3d+ and you genuinely can't tell if it's dead → ASK Sohan, quoting the last exchange ('Cherry went quiet 4d after your $1.80 — dead or cooking? her last: …') — DEFAULT TO ASK WHEN UNSURE, never a blind chase; (c) already handled / waiting on them / dead → stay silent (note if dead). Before a real chase, `brain.js recall \"<counterparty+situation>\"` for what you learned + `brain.js play rank --cat <situation>` for the move most likely to land. (5) Log each nudge (date + ref); prune >7d. (6) Nothing cleared the bar → reply exactly HEARTBEAT_OK and nothing else. HARD RULES: money only; one nudge per deal per day; never invent a number; the 2-3d window triggers a RE-READ, not an auto-chase."
   },
   "scheduled": [
@@ -59,6 +68,13 @@
         "sun"
       ],
       "prompt": "Sunday pipeline review, delivered as Winston. Read memory/deals.md, memory/goals.md, memory/business.md, memory/notes.md, and this week's memory/journal/ entries. An honest desk review: deals born vs dropped this week and why the dead ones died, deals that moved vs stalled and the real reason, margin won or given away, and progress vs the target in goals.md. Then 3 concrete money moves for next week (specific deals + actions). CONSOLIDATE: promote pricing/buyer/supplier learnings from the journal into business.md and people/ files, recompute the Pipeline metrics block in deals.md (live deals, $ on table, born/closed/dead/booked this week), update target progress in goals.md, prune notes.md of dead items. Close with the single highest-leverage question on the desk right now — no life coaching, no encouragement filler; the standard is money."
+    },
+    {
+      "time": "18:30",
+      "days": [
+        "sun"
+      ],
+      "prompt": "Weekly self-evolution (Hermes loop, runs on the sub). Run `node ../../scripts/evolve.js gather` and follow its four steps EXACTLY: (1) score this week with the LLM-judge rubric (0.5 correctness + 0.3 procedure + 0.2 conciseness − length penalty), citing evidence; (2) reflect over your real memory — brain.js lessons + play win/loss records + the journal; (3) reflectively mutate into a FULL proposed CLAUDE.md with 1–3 evidence-tied sharpenings, changing only what the evidence justifies; (4) write it to memory/evolve/<date>-proposal.md and run `node ../../scripts/evolve.js check <that file>` — it must PASS (size, growth, and every immutable guardrail intact; a mutation that deletes a safety rule is rejected). Iterate until it passes. Then text Sohan ONE line pointing at the diff for him to review + apply. NEVER overwrite CLAUDE.md yourself — promotion is his call. If nothing this week justifies a change, say so in one line and skip the proposal."
     }
   ]
 }

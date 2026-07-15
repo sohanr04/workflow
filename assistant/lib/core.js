@@ -9,7 +9,8 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
+const oc = require('./openclaw'); // OpenClaw-ported runtime mechanisms
 
 // ---------------------------------------------------------------------------
 // Profile + env
@@ -69,7 +70,7 @@ function createClaude({ profile, profileDir, sessionsFileName = 'sessions.json',
     }
   }
 
-  function runClaude(userText, sessionId) {
+  function runClaude(userText, sessionId, modelOverride) {
     return new Promise((resolve) => {
       const args = [
         '-p', userText,
@@ -88,7 +89,8 @@ function createClaude({ profile, profileDir, sessionsFileName = 'sessions.json',
         if (fs.existsSync(dir)) args.push('--add-dir', dir);
         else log(`addDir skipped (not found): ${dir}`);
       }
-      if (profile.model) args.push('--model', profile.model);
+      const useModel = modelOverride || profile.model;
+      if (useModel) args.push('--model', useModel);
       if (sessionId) args.push('--resume', sessionId);
 
       // cwd = profile dir, so this person's CLAUDE.md (persona + memory) loads.
@@ -134,15 +136,41 @@ function createClaude({ profile, profileDir, sessionsFileName = 'sessions.json',
     });
   }
 
+  // OpenClaw fallback chain: opus first, then whatever profile.modelFallbacks
+  // lists (e.g. ["claude-sonnet-4-6"]). A transient overload/5xx fails over
+  // instead of dropping the message; a hard auth/usage error does not.
+  const fallbacks = profile.modelFallbacks || [];
+
+  async function runWithFallback(userText, sessionId) {
+    let res = await runClaude(userText, sessionId);
+    if (res.ok) return res;
+    let cls = oc.classifyRetryable(res.error);
+    for (let i = 0; i < fallbacks.length && cls.retryable; i++) {
+      const alt = fallbacks[i];
+      log(`model fallback: ${profile.model || 'default'} ${cls.reason} → ${alt}`);
+      res = await runClaude(userText, sessionId, alt);
+      if (res.ok) {
+        res.notice = oc.buildFallbackNotice({
+          selectedModel: profile.model || 'default', activeModel: alt, reason: cls.reason,
+        });
+        return res;
+      }
+      cls = oc.classifyRetryable(res.error);
+    }
+    return res;
+  }
+
   async function ask(chatKey, userText) {
     const prior = sessions[chatKey];
-    let res = await runClaude(userText, prior);
-    // A stale/expired session id makes --resume fail; retry once fresh.
+    let res = await runWithFallback(userText, prior);
+    // A stale/expired session id makes --resume fail; retry once fresh — and
+    // re-inject the desk anchor (today's date + the board-is-suspect rule),
+    // OpenClaw's post-compaction re-injection, since the thread was lost.
     if (!res.ok && prior) {
       log(`resume failed for ${chatKey}, retrying fresh:`, res.error);
       delete sessions[chatKey];
       saveSessions();
-      res = await runClaude(userText, undefined);
+      res = await runWithFallback(`${oc.buildResumePreamble()}\n\n${userText}`, undefined);
     }
     if (res.ok && res.sessionId) {
       sessions[chatKey] = res.sessionId;
@@ -196,11 +224,37 @@ function startScheduler({ profile, profileDir, log, sendToOwner, runScheduled })
     return s <= e ? (cur >= s && cur < e) : (cur >= s || cur < e);
   }
 
+  // OpenClaw's isHeartbeatContentEffectivelyEmpty ported as a cheap gate: run a
+  // no-LLM signal command (for Winston, a count of fresh ball-on-us deals from
+  // the board) BEFORE spawning the expensive `claude -p` patrol. If the signal
+  // is empty/zero, skip the whole call — saves sub usage on every quiet tick.
+  // profile.heartbeat.gate = { command: "node scripts/deals.js today", cwd?, min?:1 }
+  function heartbeatGatePasses() {
+    const gate = hb && hb.gate;
+    if (!gate || !gate.command) return true; // no gate → always run (old behavior)
+    try {
+      const out = execFileSync(gate.command.split(' ')[0], gate.command.split(' ').slice(1), {
+        cwd: gate.cwd ? gate.cwd.replace(/^~(?=$|\/)/, os.homedir()) : profileDir,
+        encoding: 'utf8', timeout: (gate.timeoutSeconds || 45) * 1000, env: process.env,
+      });
+      if (oc.isHeartbeatContentEffectivelyEmpty(out)) { log('heartbeat skipped: gate empty'); return false; }
+      const nums = out.match(/\d+/g);
+      const signal = nums ? Math.max(...nums.map(Number)) : 0;
+      if (signal < (gate.min || 1)) { log(`heartbeat skipped: gate=${signal} (<${gate.min || 1})`); return false; }
+      log(`heartbeat gate=${signal} → patrol`);
+      return true;
+    } catch (e) {
+      log('heartbeat gate errored, running patrol anyway:', e.message);
+      return true; // fail open — a broken gate must not silence a live desk
+    }
+  }
+
   function checkHeartbeat() {
     if (!hb || !hb.prompt) return;
     const now = new Date();
     if (Date.now() - lastHb < (hb.everyMinutes || 30) * 60000) return;
     if (inQuietHours(now)) return;
+    if (!heartbeatGatePasses()) { lastHb = Date.now(); fs.writeFileSync(hbStateFile, JSON.stringify({ last: lastHb })); return; }
     lastHb = Date.now();
     fs.writeFileSync(hbStateFile, JSON.stringify({ last: lastHb }));
     log('heartbeat patrol');

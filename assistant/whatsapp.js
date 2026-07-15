@@ -19,6 +19,7 @@
 
 const path = require('path');
 const { loadProfile, makeLog, createClaude, startScheduler } = require('./lib/core');
+const oc = require('./lib/openclaw');
 
 let baileys;
 let qrcode;
@@ -137,11 +138,18 @@ async function start() {
                 else await sendTo(selfJid, `Scheduled task failed: ${res.error}`);
                 return;
               }
-              if (opts.suppressIf && res.text && res.text.includes(opts.suppressIf)) {
-                log('heartbeat: nothing to report');
-                return;
+              // OpenClaw token discipline: strip a trailing HEARTBEAT_OK and
+              // only stay silent if NOTHING meaningful remains. The old
+              // `.includes()` wrongly swallowed real reports that ended with
+              // the token ("chased Cherry. HEARTBEAT_OK").
+              let outText = res.text;
+              if (opts.suppressIf) {
+                const { shouldSkip, text } = oc.stripSilentToken(res.text, opts.suppressIf);
+                if (shouldSkip) { log('heartbeat: nothing to report'); return; }
+                outText = text;
               }
-              await sendTo(selfJid, res.text);
+              if (res.notice) outText = `${res.notice}\n${outText}`;
+              await sendTo(selfJid, outText);
             });
           },
         });

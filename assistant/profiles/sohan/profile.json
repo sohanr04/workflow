@@ -42,8 +42,11 @@
   },
   "heartbeat": {
     "everyMinutes": 30,
-    "quietHours": ["23:00", "07:15"],
-    "prompt": "Silent deal-desk patrol as Winston — Sohan did NOT message you. THE BOARD IS THE PIPELINE: the deals-engine derives every live deal into a table refreshed every 3 min, with stage/ball/urgency ALREADY computed — you read it, you do NOT re-derive deals from raw email. Run IN ORDER: (1) `node ../../scripts/deals.js today` (ball on US) and `node ../../scripts/deals.js stalled` (waiting on them, past threshold). These ARE the leaks — the engine did the logic. (2) FOCUS on FRESH movement: deals with LOW silent_hours (moved in the last day or two) are the live, chaseable ones — surface those. Deals silent >2 weeks (≈336h+) are the cold backlog: do NOT nudge them one-by-one — mention them once as a batch count ('47 buyer intents unanswered >2wks — want the list?'). (3) Read memory/notes.md patrol log first; skip anything already nudged today. (4) For each fresh leak: pull the actual last email with `node ../../scripts/graph.js thread <style-code>` so you quote real context, then ONE text to Sohan — lead with dollars if a price/qty is known, name the single action, attach a ready-to-send chase draft. (5) Log each nudge in the patrol log (date + deal); prune >7 days. (6) Nothing fresh cleared the bar? Reply exactly HEARTBEAT_OK and nothing else. HARD RULES: money only; one nudge per deal per day; never invent a number; deals.md is your working notes on top of the board, not the source of truth."
+    "quietHours": [
+      "23:00",
+      "07:15"
+    ],
+    "prompt": "Silent deal-desk patrol as Winston — Sohan did NOT message you. THE BOARD IS A SUSPECT LIST, NOT THE TRUTH. The deals-engine spots a deal being BORN well, but then ages a birth snapshot on a CLOCK — it does NOT re-read the thread — so its 'ball on us, chase' is often wrong (the deal already died, was handled, or waits on the factory). NEVER nudge off a board row. Run IN ORDER: (1) `node ../../scripts/deals.js today` + `node ../../scripts/deals.js stalled` — these are CANDIDATES, not facts. (2) Read memory/notes.md patrol log; skip anything already nudged today. (3) FRESH first: low silent_hours = live/chaseable; deals silent >2wks (≈336h+) are cold backlog — mention once as a batch count ('47 intents >2wks — want the list?'), never one-by-one. (4) For each FRESH candidate leak, RE-GROUND before doing anything: `node ../../scripts/dealctx.js <style-code>` — it pulls the full thread across all 3 boxes + what you learned. The thread is the truth. Then decide FROM THE THREAD: (a) real current action, ball genuinely on us → ONE text: quote the actual last message + the exact next move + a ready-to-send draft (lead with dollars if a price/qty is known); (b) silent 2-3d+ and you genuinely can't tell if it's dead → ASK Sohan, quoting the last exchange ('Cherry went quiet 4d after your $1.80 — dead or cooking? her last: …') — DEFAULT TO ASK WHEN UNSURE, never a blind chase; (c) already handled / waiting on them / dead → stay silent (note if dead). Before a real chase, `brain.js recall \"<counterparty+situation>\"` for what you learned + `brain.js play rank --cat <situation>` for the move most likely to land. (5) Log each nudge (date + ref); prune >7d. (6) Nothing cleared the bar → reply exactly HEARTBEAT_OK and nothing else. HARD RULES: money only; one nudge per deal per day; never invent a number; the 2-3d window triggers a RE-READ, not an auto-chase."
   },
   "scheduled": [
     {
@@ -52,7 +55,9 @@
     },
     {
       "time": "18:00",
-      "days": ["sun"],
+      "days": [
+        "sun"
+      ],
       "prompt": "Sunday pipeline review, delivered as Winston. Read memory/deals.md, memory/goals.md, memory/business.md, memory/notes.md, and this week's memory/journal/ entries. An honest desk review: deals born vs dropped this week and why the dead ones died, deals that moved vs stalled and the real reason, margin won or given away, and progress vs the target in goals.md. Then 3 concrete money moves for next week (specific deals + actions). CONSOLIDATE: promote pricing/buyer/supplier learnings from the journal into business.md and people/ files, recompute the Pipeline metrics block in deals.md (live deals, $ on table, born/closed/dead/booked this week), update target progress in goals.md, prune notes.md of dead items. Close with the single highest-leverage question on the desk right now — no life coaching, no encouragement filler; the standard is money."
     }
   ]

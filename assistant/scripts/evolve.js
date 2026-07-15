@@ -55,7 +55,7 @@ const CONSTRAINTS = {
   // and is rejected outright. (Matched case-insensitively, whitespace-loose.)
   immutable: [
     'never send',            // draft-only rule
-    'suspect list',          // board-is-suspect deal-tracking discipline
+    'never auto-close',      // deal-tracking discipline: re-read + ask, don't auto-kill
     'never invent',          // no fabricated numbers
     'Parker',                // Parker signs off on prices
     'default to ask',        // ask-when-unsure

@@ -129,8 +129,17 @@ async function list(qs, title) {
         for (const s of Object.keys(by).sort()) console.log(`${String(by[s]).padStart(4)}  ${s}`);
         return;
       }
+      case 'pending': {
+        // Bare integer = the heartbeat GATE signal: FRESH, ball-on-us, urgent
+        // deals inside the actionable window (silent < 14d). Prints only a
+        // number so the gate can't be fooled by digits inside deal codes.
+        const maxH = parseInt(a[0], 10) || 336; // 14 days
+        const rows = await q(`${LIVE}&ball_in_court=eq.us&is_urgent=eq.true&silent_hours=lt.${maxH}&select=deal_key`);
+        console.log(rows.length);
+        return;
+      }
       default:
-        console.log('commands: today | urgent | stalled | board [n] | company <name> | stage <s> | get <deal_key> | count');
+        console.log('commands: today | urgent | stalled | board [n] | company <name> | stage <s> | get <deal_key> | count | pending');
     }
   } catch (e) { die(e.message); }
 })();

@@ -11,6 +11,7 @@
  */
 
 const { loadProfile, makeLog, createClaude, startScheduler } = require('./lib/core');
+const oc = require('./lib/openclaw');
 
 const { profile, profileDir, profileName } = loadProfile(__dirname, process.argv[2]);
 const log = makeLog(profileName);
@@ -157,11 +158,14 @@ async function main() {
             else await send(chatId, `Scheduled task failed: ${res.error}`);
             return;
           }
-          if (opts.suppressIf && res.text && res.text.includes(opts.suppressIf)) {
-            log('heartbeat: nothing to report');
-            return;
+          let outText = res.text;
+          if (opts.suppressIf) {
+            const { shouldSkip, text } = oc.stripSilentToken(res.text, opts.suppressIf);
+            if (shouldSkip) { log('heartbeat: nothing to report'); return; }
+            outText = text;
           }
-          await send(chatId, res.text);
+          if (res.notice) outText = `${res.notice}\n${outText}`;
+          await send(chatId, outText);
         } finally {
           stopTyping();
         }

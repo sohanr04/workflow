@@ -124,25 +124,64 @@ actual economics. Fill these from Sohan (ask one at a time, in context):
 Each buyer and supplier has a pattern worth knowing cold (record it in the
 people/ files as you learn it):
 
-**Buyers (SELL side — they come in low, expect it)**
-- **Power Fashion** (SA) — Mandisa Dladla (Trainee Buyer, MDladla@), Nomndeni
-  Nkosi (NNkosi@), Noma Fakazi, Kyla. Big volumes; often quote in Rands (R);
-  store-licensing can gate deals. On the pants they opened R70 → $2.50.
-- **Choice Clothing** (SA) — Lecia Oosthuizen (leciao@), Nawaal (nawaalk@).
-  Very active — jackets, caps, joggers, windbreakers. Lecia deals fast but
-  needs a clear USD price on the offer; Nawaal opens low ($0.90 on the cap).
-- **Good Hope Sales** (Cape Town, SA) — Chantal Nolan (chantaln@goodhopesales)
-  — NEW buyer, gave $1.25 target on lounge pants.
+**Buyers — FULL ROSTER (from relay `data/customers.csv`, 2026-07-16).**
+6 buyer accounts, 38 contacts. (u) = unsubscribed from blasts — do NOT
+expect them on a blast; reachable direct only. All SA unless noted.
+
+- **Power Fashion** (@powerfashion.co.za) — biggest account, 19 contacts,
+  big volumes, often quotes in Rands (R). Live: **Mandisa Dladla** (mdladla —
+  pants, opened R70→$2.50), **Noma Fakazi** (nfakazi — sneakers, board shoes),
+  **Kyla Mulder** (kmulder — the 453k girls' tees), **Michelle Sampson**
+  (msampson — baby 2pc sets, opened $0.80), Nomndeni Nkosi (nnkosi), Somi
+  Ntsodi, Taryn Smith, Setshaba Mmusi, **Kylie Blakeman** (kblakeman — a Power
+  buyer, ≠ internal "Kylie Yan"), Ziyanda Zembe, Aysha Ballim, Clayton Manuel.
+  (u): Bernita Sukhlal, Tyla Reddy, Denise Pillay, Megan Govender, KerryLee
+  Godden, Damian Narasimmah, Janaine Naidoo.
+- **Choice Clothing** (@choiceclothing.co.za) — very active; jackets, caps,
+  joggers, windbreakers, bombers. **Lecia** (leciao — fast, needs a clear USD
+  price on the offer; was auto-suppressed early Jul, lifted 6 Jul), **Nawaal**
+  (nawaalk — opens low, $0.90 on the cap), Caryn (caryna), Kauthar (kauthars),
+  Thakierah (thakierahj).
+- **Good Hope Sales** (Cape Town; labelled **"Stride"** in the relay,
+  @goodhopesales.com) — **Chantal Nolan** (chantaln — $1.25 on lounge pants),
+  Amanda (amandac), David (davidf).
+- **Style / Retail SLS** (@retailsls.co.za) — Charmain Xaba (charmaine.xaba),
+  Tidoe Mbhelu, Bianca Lee. (u): Zahra.
+- **Jam Clothing** (@jamclothing.co.za) — **blast-SUPPRESSED; pull channel.**
+  Gets ONE digest email/day (see "The Jam digest" below) + browses ge-stock.com.
+  Grant Fraser (mens), Marisa Ribbink (ladies), Ronald Mampa (kids), Zanele
+  Mgoduka (footwear), Nicole Thompson (bags).
+- **Blue Barrel** (@bluebarrel.co.za) — **outerwear-ONLY** buyer (env-gated to
+  the jacket family: jacket/coat/bomber/puffer/windbreaker/parka/anorak/etc).
+  Mohammed Karodia, Ashraf.
 
 <!-- The Warehouse Group (Mark Stirton, NZ) is repeat/production business,
      NOT stocklot — deliberately OUT of Winston's stock-only desk. -->
 
-**Suppliers (BUY side — squeeze here, this is where margin is made)**
-- **Gbest Garment** (Cherry, gbest-cherry@) — GBT26-xxxx refs. Sat at $2.45
-  on the pants; we're pushing $1.80. LEARN: how far/fast Cherry actually drops.
-- **Stockpapa** (Scott scott@, Daisy, papachina) — SP-xxxxx refs; bombers,
-  jackets. Good colours per Parker.
-- LEARN: the go-to source per category (jackets, shoes, tees).
+**Suppliers — FULL ROSTER (from relay `SUPPLIERS.md`, 2026-07-16).**
+14 active supplier domains, ranked by offer volume. This is the real buy
+side — squeeze here, margin is made here.
+
+- **stockpapa.cn** (~47%, the dominant source) — Scott (scott@), Daisy;
+  SP-xxxxx refs; bombers, jackets, tees. Sends body+JPGs and multi-product
+  `.pptx` decks. Good colours (Parker).
+- **gbestgarment.com** (~28% — "Cherry") — GBT26-xxxx refs. Sat $2.45 on the
+  pants, we pushed $1.80. JPGs + Excel + inline. LEARN: how far/fast Cherry drops.
+- **tailormax.com** (~7%) — body + inline photos + size chart.
+- **hpromise.com** (~5%) — Excel + many inline images.
+- **bentagarment.com** (~4%) — JPGs + Excel; 86% arrive as RE:/FW: threads.
+- **wolftrade.cn** (~3%) — footwear.
+- **yeletrading.com** (~2%) — quotation-style Excel.
+- **qq.com / 163.com** (~1% each) — generic shared mailboxes; JPGs. (Note:
+  ninaguo1990@163.com caused the Jul-9 image leak → her offers now draft-only.)
+- **wellroyalgarment.com, xuanqigmt.com, royalgarment.cn, wintopstock.com,
+  wintopshoes.com** (<1% each) — long tail; royalgarment is Excel-only+PDF,
+  wintopshoes is footwear.
+- **Atila** (YLBL-/DIS- footwear: sandals, flats, skate shoes) — draft-mode
+  supplier; text-only + carton-photo habits triggered the no-photo + photo-type
+  gates. Ningbo-based, ships from a Jan DC (per DIS-26071506 skate shoes).
+- LEARN: the single go-to source per category (jackets→Stockpapa/Gbest,
+  shoes→wolftrade/wintopshoes/Atila, tees→?).
 
 > ⚠️ **"District Stock" is NOT a supplier.** It is Grand Empire's OWN
 > outbound identity — the name/address the relay blasts offers under
@@ -191,6 +230,67 @@ top of the funnel. Sender address: **empire-districtstock@grandempirehk.com**.
 So a DIS deal is usually **born automatically** (relay blast) and then
 **closed by hand** (the team negotiates buy + sell). Winston's job starts at
 the negotiation and never lets one stall.
+
+### The full pipeline, in my words (from relay README + HANDOFF, 2026-07-16)
+
+A deal's birth and flow, stage by stage — this is the machine Winston sits on
+top of:
+
+1. **Offer lands** in a shared Outlook inbox (empire-chinastocks@). Classifier
+   (Claude Sonnet) decides: is this a real stock offer or noise (bounce,
+   newsletter, internal)?
+2. **Extract by ALLOWLIST** — the core safety idea: the relay never tries to
+   *remove* the supplier's price/name, it only **extracts the safe fields**
+   (style, description, fabric, colours, sizes, breakdown, qty, packaging) and
+   **builds a fresh email**. Price and supplier identity have *no field to live
+   in*, so they can't leak. Excel sheets are parsed for data + images then
+   DISCARDED (never forwarded); PDFs/docs never forwarded; only **images** go out.
+3. **Category tag + persona routing** — the offer is tagged with categories
+   (footwear, clothing-mens/womens/kids, knitwear, outerwear-jackets, denim,
+   accessories, bags, etc). **Only buyers whose persona buys those categories
+   get the email.** (Blue Barrel = outerwear-only; a buyer with no persona is
+   skipped until profiled.)
+4. **QA gates before send** (all fail-CLOSED → hold + Telegram alert, never a
+   bad blast): `detectLeaks()` scans for any supplier name/price/URL; a **Gemini
+   image scan** classifies every photo product/packaging/document/other and
+   **drops non-product photos** (carton stencils, spec sheets); **no-photo hold**
+   (zero product photos = held, never blasted bare); **assorted gate** (offer
+   spanning ≥3 buyer categories = skipped, leak risk); **MOQ filter** (known qty
+   < 750 skipped); **dedup** (repeat sends fingerprinted, only the first goes).
+5. **Blast** — a fresh DIS-xxxxx email under **empire-districtstock@**, photos +
+   safe spec, to the matched buyers (they see "[External Sender]").
+6. **Buyer bites** — a buyer replies "keen"/gives a price → a **🔥 ping** hits
+   the team's WhatsApp. THIS is where a deal enters Winston's book.
+7. **Negotiation loops** (relay assists, team decides):
+   - **`factory - <msg>`** off the ping → drafts a sourcing reply TO the supplier
+     (squeeze the buy leg).
+   - **`buyer - <msg>`** off the ping → drafts a reply TO the buyer, threaded
+     into their "keen" email with the cleaned offer photos + detail block
+     re-attached. Signs Sohan (from spr@) or Joyce (from joyce@).
+   - Both are **DRAFT mode** now — the team reviews/edits/sends manually; edits
+     are logged to sharpen the voice profile. One ref can carry a factory draft
+     AND a buyer draft independently.
+8. **Close by hand** — buyer confirms → Joyce raises the order → Jacqueline
+   payment → Toni-Ann ship.
+
+### The Jam digest — the one buyer who doesn't get blasts
+
+**Jam Clothing is DIGEST-ONLY.** Instead of per-offer blasts they get ONE
+email/day (cron 00:00 HKT), subject `Empire District Stock — <Month D> Stock
+Update`, counts per department + a link to **ge-stock.com**. Sent **AS Joyce**
+(joyce-wong@ — Parker required the sender be Joyce), CC spr@ + internal Kylie
+Yan. Live + verified since 14 Jul.
+
+### The leak scars — why all those gates exist (know this)
+
+The gates above aren't paranoia — they're scar tissue. **9 Jul: a mixed June
+lot (ninaguo1990@163.com) blasted to 17 buyers WITH the supplier's name + FOB
+cost prices** because two tall catalog spec-sheets slipped the image scan. Not
+recallable. That one incident spawned the no-photo hold, the photo-type gate,
+and the assorted-category gate. **The whole system exists to make sure a buyer
+never sees what we paid or who we bought from** — the relay is FROZEN and
+Winston never touches it, but this is why: one leak burns the spread on every
+future deal with that buyer.
 
 ## The website — the buyer pull channel (from prior builds)
 

@@ -201,8 +201,19 @@ async function start() {
           await sendTo(jid, 'Fresh start — what’s up?');
           return;
         }
+        // Keep "typing…" alive for the WHOLE task. WhatsApp's indicator expires
+        // in ~10s, so without refreshing, a 60–120s job looks dead right when
+        // Sohan starts to worry. Plus one "still on it" ping for long jobs so
+        // he can always SEE Winston is working, not crashed.
         await sock.sendPresenceUpdate('composing', jid).catch(() => {});
-        const res = await claude.ask(jid, text);
+        let ticks = 0;
+        const typing = setInterval(() => {
+          sock.sendPresenceUpdate('composing', jid).catch(() => {});
+          if (++ticks === 4) sendTo(jid, 'still on it — reading the boxes, hang tight ⏳').catch(() => {}); // ~32s in
+        }, 8000);
+        let res;
+        try { res = await claude.ask(jid, text); }
+        finally { clearInterval(typing); await sock.sendPresenceUpdate('paused', jid).catch(() => {}); }
         await sendTo(jid, res.ok ? res.text : `Something went wrong: ${res.error}`);
       });
     }

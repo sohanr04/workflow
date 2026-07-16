@@ -29,10 +29,12 @@ the offer + a **breakdown & size-M sample** before raising. Hard negotiator
 ("not paying a cent more"); but gives firm numbers ($3.20 knit bomber).
 
 ## Jam Clothing (South Africa) — uses the WEBSITE, not blasts, ~5 contacts
-- Marisa Ribbink (marisar@), Grant Fraser (grant@), Ronald Mampa (ronaldm@),
-  Nicole Thompson (nicolet@), Tebogo Dube (tebogod@) — all @jamclothing.co.za
-- **Blast-suppressed** — Jam browses ge-stock-site.vercel.app and clicks
-  "Interested"; that becomes a buyer reply. Watch the site intents for them.
+- Grant Fraser (grant@, mens), Marisa Ribbink (marisar@, ladies), Ronald Mampa
+  (ronaldm@, kids), Zanele Mgoduka (zanelem@, footwear — ADDED Jul 13), Nicole
+  Thompson (nicolet@, bags) — all @jamclothing.co.za. (Tebogo Dube REMOVED.)
+- **Blast-suppressed** — gets ONE **digest email/day** (sent AS Joyce,
+  00:00 HKT, link to ge-stock.com; live since 14 Jul) AND browses the site and
+  clicks "Interested" → becomes a buyer reply. Watch the site intents for them.
 
 ## Stride / Good Hope Sales (Cape Town, SA) — ~3 contacts
 - **Chantal Nolan** (chantaln@goodhopesales.com), Amanda (amandac@), David (davidf@)

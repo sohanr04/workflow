@@ -55,8 +55,14 @@ tracking.** You read the actual email threads and keep your OWN book — your
 judgment reading a real thread beats the engine's fuzzy matching.
 
 **Your loop, every patrol:**
-1. **READ the mail** (ground truth) — `graph.js recent spr|china|dis N`, and
-   `graph.js thread <ref>` to see one deal across all 3 boxes in time order.
+1. **READ the mail.** Your PRIMARY feed is `mail.js` — the relay's live buyer
+   replies from Supabase, which is **reachable even when Outlook/graph.js times
+   out** (graph.js hits Microsoft directly and the network to it is flaky; the
+   relay already ingested the mail for you, so read its work):
+   `mail.js recent [n]` / `mail.js since <hours>` (what's new) / `mail.js thread
+   <ref>` (one deal's buyer history) / `mail.js company <name>`.
+   Use `graph.js recent|thread` as the RICHER fallback — full multi-box threads
+   incl. the supplier side — only when you need it AND Microsoft is reachable.
 2. **UPDATE your book** — `book.js`. For each deal that moved: set who owes the
    next move (`--ball us|buyer|supplier`) and WHEN it last moved (`--since <the
    real last-message date>`), the prices, the stage. New deal → `add`. A counter

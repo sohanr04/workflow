@@ -11,8 +11,15 @@
  * Additive only. Does NOT touch auth, creds, or token caching.
  */
 
-// 1) Happy Eyeballs globally — the actual root fix. Built into Node (18.18+/20+),
-//    applies to fetch/undici too. Wrapped so an older Node can't crash on it.
+// 0) IPv4 FIRST — the decisive fix. Diagnosed 2026-07-20: IPv6 to
+//    login.microsoftonline.com has NO ROUTE on these laptops (fails instantly),
+//    IPv4 answers in ~0.3s. Node resolves AAAA first by default, so whenever it
+//    picked the v6 road the connect hung → the intermittent ETIMEDOUT. Prefer
+//    v4 and the flakiness disappears.
+try { require('dns').setDefaultResultOrder('ipv4first'); } catch { /* older node */ }
+
+// 1) Happy Eyeballs globally — belt-and-braces on top of ipv4first. Built into
+//    Node (18.18+/20+), applies to fetch/undici too.
 try { require('net').setDefaultAutoSelectFamily(true); } catch { /* older node */ }
 
 // 2) Optional undici keepalive Agent with a connect timeout. Node bundles

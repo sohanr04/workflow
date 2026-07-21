@@ -55,12 +55,41 @@ const prices = (t) => (String(t).match(/(?:US?\$|USD\s?)\s?\d+(?:\.\d+)?|\$\s?\d
 
 function die(m) { console.error('status.js: ' + m); process.exit(1); }
 
+// ── the DIS → factory link, from the relay's own records ─────────────────────
+// offer_sends holds the supplier's ORIGINAL price for each DIS offer (the
+// "no negotiation → their current price is X" case); factory_checks holds the
+// supplier-side ref (DIS-10396 ↔ SP10396-WL) + supplier name/email, which is
+// how we find the factory THREAD (it runs under the supplier's ref, not DIS).
+async function supplierLink(ref) {
+  const URL = (process.env.SUPABASE_URL || relayEnv('SUPABASE_URL') || '').replace(/\/$/, '');
+  const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || relayEnv('SUPABASE_SERVICE_ROLE_KEY');
+  const link = { price: null, style: null, name: null, email: null };
+  if (!URL || !KEY) return link;
+  const H = { apikey: KEY, Authorization: 'Bearer ' + KEY };
+  const pat = encodeURIComponent(`*${ref}*`);
+  try {
+    const os_ = await (await retryFetch(`${URL}/rest/v1/offer_sends?offer_subject=ilike.${pat}&select=supplier_price&limit=3`, { headers: H })).json();
+    link.price = (os_.find((r) => r.supplier_price) || {}).supplier_price || null;
+  } catch { /* best effort */ }
+  try {
+    const fc = await (await retryFetch(`${URL}/rest/v1/factory_checks?offer_subject=ilike.${pat}&select=supplier_style,supplier_name,supplier_email,target_price&order=created_at.desc&limit=5`, { headers: H })).json();
+    const best = fc.find((r) => r.supplier_style) || fc[0];
+    if (best) { link.style = best.supplier_style || null; link.name = best.supplier_name || null; link.email = best.supplier_email || null; }
+  } catch { /* best effort */ }
+  return link;
+}
+
 // ── read one deal: all messages for the ref, split into the two sides ────────
-async function readDeal(ref, tok) {
+async function readDeal(ref, tok, link = {}) {
   const rows = [];
+  const terms = [ref];
+  // the factory thread lives under the SUPPLIER's ref — search it too
+  if (link.style && link.style.toUpperCase() !== ref.toUpperCase()) terms.push(link.style);
   for (const [key, mb] of Object.entries(BOXES)) {
-    const j = await graph(`/users/${mb}/messages?$search=${encodeURIComponent('"' + ref + '"')}&$select=subject,from,toRecipients,receivedDateTime,bodyPreview&$top=50`, tok);
-    for (const m of j.value || []) rows.push({ box: key, ...m });
+    for (const t of terms) {
+      const j = await graph(`/users/${mb}/messages?$search=${encodeURIComponent('"' + t + '"')}&$select=subject,from,toRecipients,receivedDateTime,bodyPreview&$top=50`, tok);
+      for (const m of j.value || []) rows.push({ box: key, viaSupplierRef: t !== ref, ...m });
+    }
   }
   // de-dupe (same message can appear via CC in two boxes) by date+subject
   const seen = new Set();
@@ -84,7 +113,8 @@ async function readDeal(ref, tok) {
     // pull the real buyer's name out of the forward when present
     const fwdWho = intentForward ? ((text.match(/([A-Za-zÀ-ÿ .'-]+?\s*\([^)]+\))\s+is interested/i) || [])[1] || null) : null;
     const counterparty = us ? tos.find((t) => !isUs(t)) || '' : (fwdWho || from);
-    const side = (m.box === 'china' || isSupplier(counterparty) || isSupplier(from)) ? buy : sell;
+    const side = (m.viaSupplierRef || m.box === 'china' || isSupplier(counterparty) || isSupplier(from) ||
+      (link.email && (from === link.email || tos.includes(link.email)))) ? buy : sell;
     side.push({
       ts: m.receivedDateTime, from, us, counterparty,
       subject: m.subject || '', preview: (m.bodyPreview || '').replace(/\s+/g, ' ').slice(0, 200),
@@ -113,7 +143,7 @@ function sideState(list) {
   };
 }
 
-function card(ref, d) {
+function card(ref, d, link = {}) {
   const S = sideState(d.sell), B = sideState(d.buy);
   const out = [];
   out.push(`═══ ${ref} — ${d.msgs.length} messages ═══`);
@@ -127,8 +157,11 @@ function card(ref, d) {
     out.push(`      last msg: "${S.last.preview.slice(0, 110)}"`);
   }
   // BUY side — the hinge is negotiation
-  if (B.state === 'none') out.push(`BUY:  no factory contact for this ref — no negotiation, no price on record`);
-  else {
+  if (B.state === 'none') {
+    // no factory thread — but the relay may still know the supplier + list price
+    if (link.price || link.name) out.push(`BUY:  no negotiation — supplier ${link.name || '?'}${link.style ? ` (${link.style})` : ''}, their list price: ${link.price || 'no price on record'}`);
+    else out.push(`BUY:  no factory contact for this ref — no negotiation, no price on record`);
+  } else {
     const sup = B.who || '?';
     if (B.ours === 0) out.push(`BUY:  offer only from ${sup} — no negotiation started${B.lastPrice ? `; their list price: ${B.lastPrice.vals.join(' ')} (${B.lastPrice.when})` : '; no price found'}`);
     else out.push(`BUY:  negotiating with ${sup} — last move ${day(B.last.ts)} (${fmtAge(B.last.ts)}) by ${B.last.us ? 'US' : 'them'} → ball = ${B.state === 'ball-us' ? 'US' : 'them'}${B.lastPrice ? `; most recent price: ${B.lastPrice.vals.join(' ')} (${B.lastPrice.from}, ${B.lastPrice.when})` : ''}`);
@@ -138,7 +171,7 @@ function card(ref, d) {
 }
 
 // write the derived state into Winston's book (via book.js so history logs)
-function toBook(ref, d, S, B) {
+function toBook(ref, d, S, B, link = {}) {
   const args = ['add', ref];
   // overall ball: we owe the buyer a reply > factory owes us > buyer owes us
   let ball = 'us', since = d.msgs.length ? d.msgs[d.msgs.length - 1].ts : new Date().toISOString();
@@ -149,9 +182,11 @@ function toBook(ref, d, S, B) {
   const next = [];
   if (S.ours === 0 && S.state !== 'none') next.push(`REPLY to ${S.who} (unanswered ${fmtAge(d.sell[0].ts)})`);
   if (B.state !== 'none' && B.lastPrice) next.push(`factory ${B.who}: ${B.lastPrice.vals[0]} (${B.lastPrice.when})`);
+  else if (link.price) next.push(`factory ${link.name || '?'} list: ${link.price}`);
   if (next.length) args.push('--next', next.join(' · '));
   if (S.lastPrice && S.lastPrice.from === 'them') args.push('--sell', S.lastPrice.vals[0].replace(/[^0-9.]/g, ''));
   if (B.lastPrice) args.push('--buy', B.lastPrice.vals[0].replace(/[^0-9.]/g, ''));
+  else if (link.price) args.push('--buy', String(link.price).replace(/[^0-9.]/g, ''));
   execFileSync('node', [path.join(__dirname, 'book.js'), ...args], { cwd: process.cwd(), stdio: 'inherit' });
 }
 
@@ -198,14 +233,15 @@ async function births(days) {
     console.log(`# REFRESH — ${open.length} open deals in the book\n`);
     let unanswered = 0, ballUs = 0, ballThem = 0;
     for (const ref of open) {
-      const d = await readDeal(ref, tok);
+      const link = await supplierLink(ref);
+      const d = await readDeal(ref, tok, link);
       if (!d.msgs.length) { console.log(`═══ ${ref} — no messages found (check the ref)\n`); continue; }
-      const { text, S, B } = card(ref, d);
+      const { text, S, B } = card(ref, d, link);
       console.log(text + '\n');
       if (S.state !== 'none' && S.theirs > 0 && S.oursAfterPing === 0) unanswered++;
       else if (S.state === 'ball-us') ballUs++;
       else if (S.state === 'ball-them') ballThem++;
-      toBook(ref, d, S, B);
+      toBook(ref, d, S, B, link);
     }
     console.log(`# TOTALS: ${open.length} open · ❌ unanswered ${unanswered} · ball-US ${ballUs} · ball-them ${ballThem}`);
     return;
@@ -217,21 +253,23 @@ async function births(days) {
     console.log(`# SWEEP — ${refs.size} deals born (buyer pings) in last ${days}d\n`);
     let unanswered = 0, ballUs = 0, ballThem = 0;
     for (const [ref] of refs) {
-      const d = await readDeal(ref, tok);
-      const { text, S, B } = card(ref, d);
+      const link = await supplierLink(ref);
+      const d = await readDeal(ref, tok, link);
+      const { text, S, B } = card(ref, d, link);
       console.log(text + '\n');
       if (S.state !== 'none' && S.theirs > 0 && S.oursAfterPing === 0) unanswered++;
       else if (S.state === 'ball-us') ballUs++;
       else if (S.state === 'ball-them') ballThem++;
-      if (wantBook) toBook(ref, d, S, B);
+      if (wantBook) toBook(ref, d, S, B, link);
     }
     console.log(`# TOTALS: ${refs.size} born · ❌ unanswered ${unanswered} · ball-US ${ballUs} · ball-them ${ballThem}`);
     return;
   }
 
-  const d = await readDeal(a0.toUpperCase(), tok);
+  const link1 = await supplierLink(a0.toUpperCase());
+  const d = await readDeal(a0.toUpperCase(), tok, link1);
   if (!d.msgs.length) die(`no messages found for "${a0}" in any box`);
-  const { text, S, B } = card(a0.toUpperCase(), d);
+  const { text, S, B } = card(a0.toUpperCase(), d, link1);
   console.log(text);
-  if (wantBook) toBook(a0.toUpperCase(), d, S, B);
+  if (wantBook) toBook(a0.toUpperCase(), d, S, B, link1);
 })().catch((e) => die(e.message));

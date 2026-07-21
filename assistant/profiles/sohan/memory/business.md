@@ -273,6 +273,30 @@ top of:
 8. **Close by hand** — buyer confirms → Joyce raises the order → Jacqueline
    payment → Toni-Ann ship.
 
+### How the team REPLIES — the addressing protocol (from the relay code, 2026-07-21)
+
+When a buyer bites on a DIS blast, the reply does NOT come from the relay
+address. The pattern (relay `factory.ts` / `customer-followups.ts` — every
+draft Winston writes must match it):
+
+- **BUYER reply:** FROM a personal mailbox — **spr@** (Sohan) or joyce-wong@
+  (Joyce) — TO the buyer, **CC the internal team**: Mpr@ (Parker), joyce-wong@,
+  Kylie-yan@ (minus whoever is sending). Threaded into the buyer's "keen"
+  email, cleaned offer photos re-attached. **NEVER a supplier on a buyer
+  email.**
+- **FACTORY reply:** FROM **spr@**, TO the supplier who sent the offer, CC =
+  internal team **plus that factory's own team** (e.g. stockpapa → daisy@,
+  scott@, admin@stockpapa.cn). **NEVER cross-CC suppliers; a supplier never
+  appears on a buyer email and vice versa** — that's the identity wall.
+- **Voice** (the relay's own spec): warm, brief, direct — "Hi @handle," …
+  "Can we please do $1.40 with power packing?" … "Please let me know." Sign-off
+  as its own final paragraph: "Thank you," + name on a new line.
+- Customers reply into districtstock@; the team answers from personal boxes.
+
+So when Winston drafts: buyer draft = as Sohan from spr@, CC Parker/Joyce/Kylie;
+factory draft = from spr@, CC team + the factory's own people. Include the CC
+line in every draft so Sohan can copy-paste it whole.
+
 ### The Jam digest — the one buyer who doesn't get blasts
 
 **Jam Clothing is DIGEST-ONLY.** Instead of per-offer blasts they get ONE

@@ -87,8 +87,8 @@ async function readDeal(ref, tok, link = {}) {
   if (link.style && link.style.toUpperCase() !== ref.toUpperCase()) terms.push(link.style);
   for (const [key, mb] of Object.entries(BOXES)) {
     for (const t of terms) {
-      const j = await graph(`/users/${mb}/messages?$search=${encodeURIComponent('"' + t + '"')}&$select=subject,from,toRecipients,receivedDateTime,bodyPreview&$top=50`, tok);
-      for (const m of j.value || []) rows.push({ box: key, viaSupplierRef: t !== ref, ...m });
+      const j = await graph(`/users/${mb}/messages?$search=${encodeURIComponent('"' + t + '"')}&$select=id,subject,from,toRecipients,receivedDateTime,bodyPreview&$top=50`, tok);
+      for (const m of j.value || []) rows.push({ box: key, mb, viaSupplierRef: t !== ref, ...m });
     }
   }
   // de-dupe (same message can appear via CC in two boxes) by date+subject
@@ -116,7 +116,7 @@ async function readDeal(ref, tok, link = {}) {
     const side = (m.viaSupplierRef || m.box === 'china' || isSupplier(counterparty) || isSupplier(from) ||
       (link.email && (from === link.email || tos.includes(link.email)))) ? buy : sell;
     side.push({
-      ts: m.receivedDateTime, from, us, counterparty,
+      ts: m.receivedDateTime, from, us, counterparty, id: m.id, mb: m.mb, box: m.box,
       subject: m.subject || '', preview: (m.bodyPreview || '').replace(/\s+/g, ' ').slice(0, 200),
     });
   }
@@ -237,8 +237,52 @@ async function births(days) {
 (async () => {
   const [a0, a1] = process.argv.slice(2);
   const wantBook = process.argv.includes('--book');
+  const flagVal = (name) => { const i = process.argv.indexOf(name); return i >= 0 ? process.argv[i + 1] : undefined; };
   if (!a0) die('usage: status.js <ref> [--book] | status.js sweep [days] [--book]');
   const tok = await getToken();
+
+  if (a0 === 'unread') {
+    // THE READ PASS — the whole point of Winston is FULL context: he READS
+    // every message, in full, not previews. This walks every open book deal,
+    // finds messages he has never read (tracked in memory/seen.json), and
+    // prints their FULL BODIES oldest-first, grouped by deal. `--mark` records
+    // them as read. Run every patrol: nothing on the desk stays unread.
+    const limit = parseInt(flagVal('--limit'), 10) || 40;
+    const mark = process.argv.includes('--mark');
+    const seenFile = path.join(process.cwd(), 'memory', 'seen.json');
+    let seen = {}; try { seen = JSON.parse(fs.readFileSync(seenFile, 'utf8')); } catch { /* first run */ }
+    const bookFile = process.env.WINSTON_BOOK || path.join(process.cwd(), 'memory', 'book.json');
+    let book = {}; try { book = JSON.parse(fs.readFileSync(bookFile, 'utf8')); } catch { die('no book at ' + bookFile); }
+    const open = Object.entries(book.deals || {}).filter(([, d]) => !d.closed).map(([r]) => r);
+
+    const queue = [];
+    for (const ref of open) {
+      const link = await supplierLink(ref);
+      const d = await readDeal(ref, tok, link);
+      for (const side of ['sell', 'buy']) for (const m of d[side]) {
+        if (m.id && !seen[m.id]) queue.push({ ref, side, ...m });
+      }
+    }
+    queue.sort((a, b) => (a.ts || '').localeCompare(b.ts || ''));
+    const batch = queue.slice(0, limit);
+    console.log(`# UNREAD — ${queue.length} messages never read${queue.length > limit ? ` (showing oldest ${limit}; rerun for the rest)` : ''}\n`);
+    for (const m of batch) {
+      let body = '';
+      try {
+        const j = await graph(`/users/${m.mb}/messages/${m.id}?$select=body`, tok);
+        body = (j.body && j.body.content || '').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/g, ' ').replace(/[ \t]+/g, ' ').replace(/\s*\n\s*/g, '\n').trim();
+        // cut quoted history — the NEW content is what matters
+        body = body.split(/From:\s|-----Original|On .{10,40} wrote:/)[0].trim().slice(0, 1600);
+      } catch (e) { body = `(body fetch failed: ${e.message.slice(0, 80)})`; }
+      console.log(`═══ ${m.ref} [${m.side.toUpperCase()}] ${day(m.ts)} · ${m.us ? 'US' : 'THEM'} · ${m.from}`);
+      console.log(`    ${m.subject}`);
+      console.log(body.split('\n').map((l) => '    ' + l).join('\n') + '\n');
+      if (mark) seen[m.id] = m.ts || new Date().toISOString();
+    }
+    if (mark) { fs.mkdirSync(path.dirname(seenFile), { recursive: true }); fs.writeFileSync(seenFile, JSON.stringify(seen)); console.log(`# marked ${batch.length} read · ${queue.length - batch.length} remaining`); }
+    return;
+  }
 
   if (a0 === 'fresh') {
     // THE UNANSWERED LIST as one deterministic command — never hand-built.

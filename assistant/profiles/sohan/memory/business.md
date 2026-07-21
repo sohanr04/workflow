@@ -425,6 +425,17 @@ to fully understand this business. The authoritative repo:
 - The repo holds secrets (`.env`, Supabase/API keys). NEVER copy a secret into
   memory, notes, chat, or anywhere — same absolute rule as always.
 
+## READ EVERYTHING — the read pass (the point of Winston)
+
+Full context means READING every message, in full — not cards, not previews.
+`node ../../scripts/status.js unread --mark --limit 40` = every message on every
+open deal you've never read, FULL BODY, oldest first; --mark records them read
+(memory/seen.json). Run it EVERY patrol until it says 0 remaining. As you read:
+update the book from the words (kills, confirms, specs, prices), bank durable
+facts (a supplier's spec sheet, a buyer's sizing rule) into business.md/people.
+Answering any question about a deal whose messages you haven't read → read them
+first. Nothing on the desk stays unread — that is the job.
+
 ## The card gives WHO/WHEN — the WORDS give alive/dead (scar: 2026-07-21)
 
 status.js reads timestamps and prices, not meaning: Scott's "sorry, sold" looked

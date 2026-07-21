@@ -188,6 +188,29 @@ async function births(days) {
   if (!a0) die('usage: status.js <ref> [--book] | status.js sweep [days] [--book]');
   const tok = await getToken();
 
+  if (a0 === 'refresh') {
+    // Re-derive the card for every OPEN deal already in the book — this is how
+    // existing deals stay current (our replies / factory moves don't create new
+    // birth events, so a window sweep alone would miss them).
+    const bookFile = process.env.WINSTON_BOOK || path.join(process.cwd(), 'memory', 'book.json');
+    let book = {}; try { book = JSON.parse(fs.readFileSync(bookFile, 'utf8')); } catch { die('no book at ' + bookFile); }
+    const open = Object.entries(book.deals || {}).filter(([, d]) => !d.closed).map(([r]) => r);
+    console.log(`# REFRESH — ${open.length} open deals in the book\n`);
+    let unanswered = 0, ballUs = 0, ballThem = 0;
+    for (const ref of open) {
+      const d = await readDeal(ref, tok);
+      if (!d.msgs.length) { console.log(`═══ ${ref} — no messages found (check the ref)\n`); continue; }
+      const { text, S, B } = card(ref, d);
+      console.log(text + '\n');
+      if (S.state !== 'none' && S.theirs > 0 && S.oursAfterPing === 0) unanswered++;
+      else if (S.state === 'ball-us') ballUs++;
+      else if (S.state === 'ball-them') ballThem++;
+      toBook(ref, d, S, B);
+    }
+    console.log(`# TOTALS: ${open.length} open · ❌ unanswered ${unanswered} · ball-US ${ballUs} · ball-them ${ballThem}`);
+    return;
+  }
+
   if (a0 === 'sweep') {
     const days = parseInt(a1, 10) || 14;
     const refs = await births(days);

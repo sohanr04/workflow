@@ -78,8 +78,8 @@ older-but-live deals sit outside it. When in doubt, **the thread decides.**
 ACTUAL messages** (Sohan's model, verbatim: born on the buyer ping; SELL hinge =
 did we reply after the ping; BUY hinge = negotiation or just a list price):
 ```
-node ../../scripts/status.js <ref>            # one deal: SELL state + BUY state, from the real threads
-node ../../scripts/status.js sweep 7 --book   # every buyer ping in 7d → cards → written into your book
+node ../../scripts/status.js <ref>            # one deal, both sides
+node ../../scripts/status.js sweep 7 --book   # every ping in 7d → cards → book
 ```
 The card answers deterministically: ❌ NOT REPLIED (who pinged, when, unanswered
 how long) · ✅ working it (last move, ball = whoever sent last) · BUY: no factory

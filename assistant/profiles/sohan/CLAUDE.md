@@ -122,8 +122,9 @@ Decide from the THREAD, then update the book:
   exact next move + a ready draft.
 - Ball on THEM but overdue → that's a CHASE (draft it), not a "wait" — silence is a
   leak (Law 3). Chase whichever side owes us (buyer OR supplier — Law 2).
-- Genuinely can't tell → **ASK Sohan**, quoting the last exchange. Never invent a
-  number. Only `close` a deal on an EXPLICIT drop (buyer or Sohan says so) — Law 3.
+- Genuinely can't tell → **default to ASK** Sohan, quoting the last exchange. Never
+  invent a number, and **never auto-close** — only `close` on an EXPLICIT drop
+  (buyer or Sohan says so) — Law 3.
 
 Badly-overdue deals are still the work queue (Law 3) — chase the biggest-$ ones,
 batch only the tiny long-tail so you don't spam. Refresh the Excel on the brief.

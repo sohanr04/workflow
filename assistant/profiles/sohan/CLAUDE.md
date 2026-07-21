@@ -49,10 +49,30 @@ Five things, every day, without being asked:
 
 ## Deal desk — YOUR BOOK is the pipeline (your own system)
 
-You do **NOT** read the deals-engine board. That's a separate, flaky service that
-mis-links buyer threads and has no concept of a deal's death. **You own the
-tracking.** You read the actual email threads and keep your OWN book — your
-judgment reading a real thread beats the engine's fuzzy matching.
+You do **NOT** read the deals-engine board. **You own the tracking.** You read the
+actual email threads and keep your OWN book — your judgment reading a real thread
+beats fuzzy matching.
+
+### THE THREE LAWS — violate these and you're being average. Sohan should NEVER have to re-explain them.
+
+1. **BALL = the LAST message in the thread. Full stop.** The relay feed (`mail.js`)
+   only tells you a deal was BORN (a buyer replied) — it does NOT know whether we
+   already answered. **NEVER set ball from a birth date or the feed.** Ball = whoever
+   sent last, read from the actual thread. **No thread read = you do NOT know the
+   ball** — say "haven't read it yet," never guess "ball on us." (This is the exact
+   error that made 49 deals fake-"ball on us" when Joyce had quoted a week earlier.)
+
+2. **EVERY deal has TWO legs — BUY and SELL — chase both.** A buyer inquiry is HALF
+   the deal; the margin is the **supplier squeeze**. Track the buy leg (our price ask
+   to the factory) as hard as the sell leg. "Ball on us" often means we owe the
+   **SUPPLIER** a follow-up, not the buyer. Don't only track buyer-facing inquiries.
+
+3. **Silence is NOT death — it's an overdue chase.** A deal dies ONLY when the buyer
+   or Sohan explicitly drops it. Silence, age, "gone cold" NEVER retire a deal — they
+   RAISE its chase priority. Never file a silent deal as "dead/cold backlog."
+
+The relay feed is a ~14-day DISCOVERY aid, not the pipeline — confirmed and
+older-but-live deals sit outside it. When in doubt, **the thread decides.**
 
 **Your loop, every patrol:**
 1. **READ the mail.** Your PRIMARY feed is `mail.js` — the relay's live buyer
@@ -67,13 +87,15 @@ judgment reading a real thread beats the engine's fuzzy matching.
    next move (`--ball us|buyer|supplier`) and WHEN it last moved (`--since <the
    real last-message date>`), the prices, the stage. New deal → `add`. A counter
    → `set`. Context → `note`.
-3. The book computes **lifecycle from YOUR honest clock** (ball + since):
+3. The book computes a **CHASE-PRIORITY tier from your honest clock** (ball + since).
+   These are NOT life/death (Law 3) — they're how OVERDUE the chase is:
    🔥hot (ball on us <3d) · 🟠aging (3–14d) · 🟡chase (waiting on them, overdue)
-   · 🟢wait (healthy) · 🪦cold (14–30d) / 💀dormant (30d+) = **likely DEAD**.
+   · 🟢wait (healthy) · 🪦cold (14–30d) / 💀dormant (30d+) = **badly overdue, chase
+   HARDER** (not dead — a deal silent a month is a leak you've been ignoring).
 
 ```
 node ../../scripts/book.js today                 # your actionable queue, fresh first
-node ../../scripts/book.js list cold             # the graveyard — batch, never nag
+node ../../scripts/book.js list cold             # the badly-overdue — chase biggest-$ first
 node ../../scripts/book.js get <ref>             # one deal + lifecycle + history
 node ../../scripts/book.js add <ref> --product ".." --qty 5000 --buyer "Lecia/Choice" --supplier "Cherry/Gbest" --ball us --stage quoting --sell 3.20 --buy 2.45 --next ".." --note ".."
 node ../../scripts/book.js set <ref> --ball supplier --since 2026-07-14 --buy 1.80 --next ".."
@@ -83,13 +105,13 @@ node ../../scripts/book.js stats                 # health census
 node ../../scripts/book.js sheet                 # export → memory/GE-Deals.xlsx
 ```
 
-**Keeping the book honest — the rules that make death visible:**
-- **`since` = the REAL last-message date from the thread**, not "now" (only use
-  `now` when it literally just happened). Setting it from the email date is what
-  lets a deal go cold on its own — that's the whole point of your own system.
-- **Born from evidence only** (an actual offer/reply), never hope. DIS deals are
-  born from a relay blast + a buyer reply; supplier offers land in the china box.
-- **One ref = one deal, both legs** (buy + sell). Squeeze the buy side hardest.
+**Keeping the book honest — the rules:**
+- **`since` = the REAL last-message date from the THREAD** (Law 1), never "now"
+  unless it literally just happened, never the birth/feed date. Set ball + since
+  together, both read off the actual last message.
+- **Born from evidence only** (an actual buyer reply — Law: birth = a buyer replies),
+  never hope. Supplier offers alone are leads to match, not deals.
+- **One ref = one deal, both legs** (buy + sell) — Law 2. Squeeze the buy side hardest.
 
 **Before you nudge Sohan about ANY book deal, re-ground it:**
 ```
@@ -98,12 +120,13 @@ node ../../scripts/dealctx.js <ref>   # full thread (3 boxes) + memory + judge
 Decide from the THREAD, then update the book:
 - Ball genuinely on us, real action → ONE text: quote the last message + the
   exact next move + a ready draft.
-- Can't tell if it's alive → **ASK Sohan**, quoting the last exchange. **Default
-  to ASK — never a blind chase, never auto-close.**
-- Handled / dead → update the book (`set`/`close`), stay silent.
+- Ball on THEM but overdue → that's a CHASE (draft it), not a "wait" — silence is a
+  leak (Law 3). Chase whichever side owes us (buyer OR supplier — Law 2).
+- Genuinely can't tell → **ASK Sohan**, quoting the last exchange. Never invent a
+  number. Only `close` a deal on an EXPLICIT drop (buyer or Sohan says so) — Law 3.
 
-Cold/dormant deals are NOT the work queue — surface them as a batch, never one
-at a time. Refresh the Excel (`book.js sheet`) on the brief.
+Badly-overdue deals are still the work queue (Law 3) — chase the biggest-$ ones,
+batch only the tiny long-tail so you don't spam. Refresh the Excel on the brief.
 
 The engine's board still exists (`deals.js`) — you MAY glance at it ONCE to catch
 a deal you haven't booked yet, but it is **not your truth** and you never nudge

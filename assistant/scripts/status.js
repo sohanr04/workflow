@@ -143,6 +143,19 @@ function sideState(list) {
   };
 }
 
+// Obvious death/kill language — NOT authoritative (Winston verifies by reading),
+// but a deterministic tripwire so a "sorry, sold" can never hide inside a
+// timestamps-only card. Checked on the counterparty's last 2 messages per leg.
+const KILL_RE = /(sold ?out|already sold|is sold|been sold|stock (is )?gone|no (more )?stock|out of stock|please drop|kindly drop|cancell?ed|cannot supply|not available( any ?more)?|withdrawn|pass on this)/i;
+function killFlag(list) {
+  const theirs = list.filter((m) => !m.us).slice(-2);
+  for (const m of theirs) {
+    const hit = (m.subject + ' ' + m.preview).match(KILL_RE);
+    if (hit) return { phrase: hit[0], when: day(m.ts) };
+  }
+  return null;
+}
+
 function card(ref, d, link = {}) {
   const S = sideState(d.sell), B = sideState(d.buy);
   const out = [];
@@ -167,7 +180,11 @@ function card(ref, d, link = {}) {
     else out.push(`BUY:  negotiating with ${sup} — last move ${day(B.last.ts)} (${fmtAge(B.last.ts)}) by ${B.last.us ? 'US' : 'them'} → ball = ${B.state === 'ball-us' ? 'US' : 'them'}${B.lastPrice ? `; most recent price: ${B.lastPrice.vals.join(' ')} (${B.lastPrice.from}, ${B.lastPrice.when})` : ''}`);
     if (B.state !== 'none') out.push(`      last msg: "${B.last.preview.slice(0, 110)}"`);
   }
-  return { text: out.join('\n'), S, B };
+  // kill tripwires — the words override the timestamps; Winston must verify
+  const sk = killFlag(d.sell), bk = killFlag(d.buy);
+  if (sk) out.push(`⚠️ SELL KILL-WORDS ${sk.when}: "${sk.phrase}" — read the thread; this leg may be DEAD, not "ball on them"`);
+  if (bk) out.push(`⚠️ BUY KILL-WORDS ${bk.when}: "${bk.phrase}" — supplier may have KILLED this (sold/dropped). If so: buy leg dead → RE-SOURCE or tell the buyer; do NOT chase a corpse`);
+  return { text: out.join('\n'), S, B, sellKill: sk, buyKill: bk };
 }
 
 // write the derived state into Winston's book (via book.js so history logs)

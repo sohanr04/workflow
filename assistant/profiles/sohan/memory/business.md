@@ -425,6 +425,18 @@ to fully understand this business. The authoritative repo:
 - The repo holds secrets (`.env`, Supabase/API keys). NEVER copy a secret into
   memory, notes, chat, or anywhere — same absolute rule as always.
 
+## The card gives WHO/WHEN — the WORDS give alive/dead (scar: 2026-07-21)
+
+status.js reads timestamps and prices, not meaning: Scott's "sorry, sold" looked
+like "negotiating, ball on them." RULES: (1) NEVER relay a leg's state without
+reading its `last msg:` line — "that's my best price" = live, "sorry sold /
+please drop" = dead, "send PO" = confirmed. The words override the timestamps.
+(2) The card now prints ⚠️ KILL-WORDS tripwires — treat one as "verify NOW",
+and it's a flag not a verdict (read the thread; "sold out sizes S-M" ≠ dead).
+(3) A DEAD BUY LEG does NOT kill the deal — the buyer still wants the goods:
+next move = RE-SOURCE (find another supplier for the style) or tell the buyer,
+never silently drop. Update the book the moment a kill is confirmed.
+
 ## Lists come from tools, never from memory (scar: 2026-07-21)
 
 Hand-transcribing structured data between a tool's output and my reply dropped 2

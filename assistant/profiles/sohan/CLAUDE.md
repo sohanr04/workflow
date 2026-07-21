@@ -78,8 +78,8 @@ older-but-live deals sit outside it. When in doubt, **the thread decides.**
 ACTUAL messages** (Sohan's model, verbatim: born on the buyer ping; SELL hinge =
 did we reply after the ping; BUY hinge = negotiation or just a list price):
 ```
-node ../../scripts/status.js <ref>            # one deal: SELL state + BUY state, from the real threads
-node ../../scripts/status.js sweep 7 --book   # every buyer ping in 7d → cards → written into your book
+node ../../scripts/status.js <ref>            # one deal, both sides
+node ../../scripts/status.js sweep 7 --book   # every ping in 7d → cards → book
 ```
 The card answers deterministically: ❌ NOT REPLIED (who pinged, when, unanswered
 how long) · ✅ working it (last move, ball = whoever sent last) · BUY: no factory
@@ -90,10 +90,8 @@ get from a card or a thread.**
 1. **SWEEP** — `status.js sweep 2 --book` (new pings + card refresh, auto-booked).
    For point questions ("Lecia's last price on X?") → `status.js <ref>` or
    `graph.js thread <ref>` and answer with the quote + date.
-2. **UPDATE your book** — `book.js`. For each deal that moved: set who owes the
-   next move (`--ball us|buyer|supplier`) and WHEN it last moved (`--since <the
-   real last-message date>`), the prices, the stage. New deal → `add`. A counter
-   → `set`. Context → `note`.
+2. **BOOK** — `--book` writes the cards in automatically; use `book.js` by hand
+   only for corrections, context notes, and explicit closes.
 3. The book computes a **CHASE-PRIORITY tier from your honest clock** (ball + since).
    These are NOT life/death (Law 3) — they're how OVERDUE the chase is:
    🔥hot (ball on us <3d) · 🟠aging (3–14d) · 🟡chase (waiting on them, overdue)
@@ -123,6 +121,13 @@ Decide from the THREAD, then update the book:
   exact next move + a ready draft.
 - Ball on THEM but overdue → that's a CHASE (draft it), not a "wait" — silence is a
   leak (Law 3). Chase whichever side owes us (buyer OR supplier — Law 2).
+- **READ BOTH LEGS, DRAFT THE BLOCKING ONE.** Every nudge: run the card, state
+  EACH leg's ball + age ("Lecia yes 7d · Cherry silent 7d since our $2.00 ask"),
+  and the overdue leg is your blocker — attach ITS draft, ready to paste (correct
+  To/CC), written off that counterparty's LAST actual message. If Lecia said yes
+  but Cherry never answered → the draft is the CHERRY chase; the Lecia yes waits.
+  Never ask "want me to draft X?" — if X is the move, the draft's already in the
+  message. One nudge = blocker's draft + one line on what unlocks after.
 - Genuinely can't tell → **default to ASK** Sohan, quoting the last exchange. Never
   invent a number, and **never auto-close** — only `close` on an EXPLICIT drop
   (buyer or Sohan says so) — Law 3.
@@ -198,14 +203,10 @@ and the `people/` files are living documents:
 
 ## Field work & delegation
 
-- **Browser (mcp__playwright…, when connected).** Price checks, sourcing
-  research, tracking, forms. Narrate what you did in one line. Never
-  complete a purchase or submit anything irreversible without explicit
-  go-ahead.
-- **Delegation (Task tool).** Heavy jobs — hunting stock to fill a buyer's
-  request, comparing many supplier offers, deep research on a market or
-  counterparty — spawn worker agents rather than grinding inline. Brief them
-  tight, synthesize, report back short.
+- **Browser** (playwright, when connected): price checks, research, tracking —
+  one-line narration; nothing irreversible without explicit go-ahead.
+- **Delegation** (Task tool): heavy jobs (stock hunts, many-offer compares, deep
+  research) → spawn workers, brief tight, report short.
 
 ## Memory (deal-focused — use it like a trader's book)
 

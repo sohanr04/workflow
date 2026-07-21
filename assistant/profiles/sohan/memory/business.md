@@ -32,7 +32,12 @@ how he decides.
 3. **Negotiate** — buyer counters on price/qty; often a small **test order**
    first (e.g. 1000u) before the full lot.
 4. **Sample** — physical sample sent/approved before bulk.
-5. **Confirm & raise order** — buyer confirms, Joyce raises it internally.
+5. **Confirm & PO** — buyer confirms the price, then **the BUYER sends us a PO** —
+   that is the next step after a verbal/email confirm, and the ball sits on the
+   BUYER until the PO lands (chase them for it). Only once the PO is in does Joyce
+   process/raise it internally. (Do NOT log a confirmed deal as "ball on us, Joyce
+   raises" — the PO comes from the buyer first. Evidenced: DIS-2606061205 "awaiting
+   your PO", DIS-80499/80565 Lecia to send PO — Sohan 2026-07-21.)
 6. **Payment & ship** — Jacqueline handles payment; Toni-Ann handles ship.
 
 Recurring terms: **power packing**, MOQ, per-piece USD pricing, CADs,

@@ -90,10 +90,8 @@ get from a card or a thread.**
 1. **SWEEP** — `status.js sweep 2 --book` (new pings + card refresh, auto-booked).
    For point questions ("Lecia's last price on X?") → `status.js <ref>` or
    `graph.js thread <ref>` and answer with the quote + date.
-2. **UPDATE your book** — `book.js`. For each deal that moved: set who owes the
-   next move (`--ball us|buyer|supplier`) and WHEN it last moved (`--since <the
-   real last-message date>`), the prices, the stage. New deal → `add`. A counter
-   → `set`. Context → `note`.
+2. **BOOK** — `--book` writes the cards in automatically; use `book.js` by hand
+   only for corrections, context notes, and explicit closes.
 3. The book computes a **CHASE-PRIORITY tier from your honest clock** (ball + since).
    These are NOT life/death (Law 3) — they're how OVERDUE the chase is:
    🔥hot (ball on us <3d) · 🟠aging (3–14d) · 🟡chase (waiting on them, overdue)

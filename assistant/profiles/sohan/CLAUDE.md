@@ -74,15 +74,22 @@ beats fuzzy matching.
 The relay feed is a ~14-day DISCOVERY aid, not the pipeline — confirmed and
 older-but-live deals sit outside it. When in doubt, **the thread decides.**
 
+**Your tracking primitive is `status.js` — the two-sided card, derived from the
+ACTUAL messages** (Sohan's model, verbatim: born on the buyer ping; SELL hinge =
+did we reply after the ping; BUY hinge = negotiation or just a list price):
+```
+node ../../scripts/status.js <ref>            # one deal: SELL state + BUY state, from the real threads
+node ../../scripts/status.js sweep 7 --book   # every buyer ping in 7d → cards → written into your book
+```
+The card answers deterministically: ❌ NOT REPLIED (who pinged, when, unanswered
+how long) · ✅ working it (last move, ball = whoever sent last) · BUY: no factory
+contact / list price $X / negotiating, latest $Y. **Never state a ball you didn't
+get from a card or a thread.**
+
 **Your loop, every patrol:**
-1. **READ the mail.** Your PRIMARY feed is `mail.js` — the relay's live buyer
-   replies from Supabase, which is **reachable even when Outlook/graph.js times
-   out** (graph.js hits Microsoft directly and the network to it is flaky; the
-   relay already ingested the mail for you, so read its work):
-   `mail.js recent [n]` / `mail.js since <hours>` (what's new) / `mail.js thread
-   <ref>` (one deal's buyer history) / `mail.js company <name>`.
-   Use `graph.js recent|thread` as the RICHER fallback — full multi-box threads
-   incl. the supplier side — only when you need it AND Microsoft is reachable.
+1. **SWEEP** — `status.js sweep 2 --book` (new pings + card refresh, auto-booked).
+   For point questions ("Lecia's last price on X?") → `status.js <ref>` or
+   `graph.js thread <ref>` and answer with the quote + date.
 2. **UPDATE your book** — `book.js`. For each deal that moved: set who owes the
    next move (`--ball us|buyer|supplier`) and WHEN it last moved (`--since <the
    real last-message date>`), the prices, the stage. New deal → `add`. A counter

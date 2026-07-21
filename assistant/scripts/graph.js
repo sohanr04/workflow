@@ -181,7 +181,11 @@ async function get(box, id) {
   console.log((m.body && m.body.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+\n/g, '\n').replace(/[ \t]+/g, ' ').trim().slice(0, 4000));
 }
 
-(async () => {
+// Importable: status.js reuses the token/query layer directly (same allowlist,
+// same denylist). The CLI only runs when invoked as a script.
+module.exports = { BOXES, getToken, graph, resolveBox };
+
+if (require.main === module) (async () => {
   const [cmd, ...a] = process.argv.slice(2);
   try {
     if (cmd === 'boxes') { console.log(Object.entries(BOXES).map(([k, v]) => `${k.padEnd(6)} ${v}`).join('\n')); return; }

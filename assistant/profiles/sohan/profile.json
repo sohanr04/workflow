@@ -4,7 +4,9 @@
   "allowedUserIds": [],
   "permissionMode": "acceptEdits",
   "model": "claude-opus-4-8",
-  "modelFallbacks": ["claude-sonnet-4-6"],
+  "modelFallbacks": [
+    "claude-sonnet-4-6"
+  ],
   "allowedTools": [
     "Read",
     "Write",
@@ -25,6 +27,7 @@
     "Bash(node ../../scripts/brain.js:*)",
     "Bash(node ../../scripts/evolve.js:*)",
     "Bash(node ../../scripts/dealsheet.js:*)",
+    "Bash(node ../../scripts/status.js:*)",
     "Bash(node ../../scripts/book.js:*)",
     "Bash(node ../../scripts/mail.js:*)",
     "Bash(npx @gongrzhe/server-gmail-autoauth-mcp:*)",
@@ -53,12 +56,12 @@
       "23:00",
       "07:15"
     ],
-    "prompt": "Silent deal-desk patrol as Winston — Sohan did NOT message you. YOUR BOOK is the pipeline (book.js), not the engine board. Run IN ORDER: (1) INGEST new mail into your book from your RELIABLE feed: `node ../../scripts/mail.js since 2` (buyer replies in the last 2h from the relay's Supabase — works even when Outlook times out). For anything that MOVED a deal since your last patrol — a new offer, a buyer reply, a counter, a confirmation — update your book: `book.js add` a newly-born deal, `book.js set <ref> --ball .. --since <the REAL last-message date> --buy/--sell .. --next ..`, `book.js note <ref> \"..\"`. Set `since` from the actual email date, never 'now' unless it just landed — that honesty is what makes death visible. If `book.js stats` shows the book near-empty (first runs), seed wider: scan the last ~7 days and add every live deal you find. (2) `node ../../scripts/book.js today` — your actionable queue (🔥hot/🟠aging/🟡chase), fresh first. (3) Read memory/notes.md patrol log; skip anything already nudged today. (4) Take the top FRESH items. RE-GROUND before nudging: `node ../../scripts/dealctx.js <ref>` — full thread + what you learned; the thread is the truth. (5) Decide FROM THE THREAD: (a) ball genuinely on us, real action → ONE text: quote the last message + the exact next move + a ready draft (lead with dollars); (b) can't tell if it's alive → ASK Sohan, quoting the last exchange — DEFAULT TO ASK, never a blind chase, never auto-close; (c) handled/dead → update the book (set/close), stay silent. Before a real chase, `brain.js recall` + `brain.js play rank --cat <situation>`. (6) Log each nudge (date + ref); prune >7d. (7) Nothing cleared the bar → reply exactly HEARTBEAT_OK. HARD RULES: money only; one nudge per deal per day; never invent a number; cold/dormant are batch-only."
+    "prompt": "Silent deal-desk patrol as Winston — Sohan did NOT message you. Your tracking primitive is `node ../../scripts/status.js` — it reads the ACTUAL threads and derives each deal's two-sided card deterministically (SELL: replied-or-not after the buyer's ping, ball = whoever sent last; BUY: factory price/negotiation state). Run IN ORDER: (1) `node ../../scripts/status.js sweep 2 --book` — every buyer ping of the last 2 days, each card derived from the real messages and written into your book. (2) Read memory/notes.md patrol log; skip anything already nudged today. (3) From the cards: ❌ NOT-REPLIED pings are the #1 leak — a buyer asked and nobody answered. For the top ones (biggest qty/$ first), text Sohan ONE tight line each: who pinged, what they said (quote it), how long unanswered, + a ready-to-send draft. (4) ball-US cards past ~24h: same treatment. ball-THEM: leave unless overdue, then a chase draft. (5) Before drafting, `brain.js recall \"<buyer>\"` for what you know about them. (6) Log each nudge (date + ref) in notes.md; prune >7d. (7) Nothing cleared the bar → reply exactly HEARTBEAT_OK. HARD RULES: money only; one nudge per deal per day; never invent a number; the card comes from the thread — if status.js finds no messages, say you couldn't read it, never guess."
   },
   "scheduled": [
     {
       "time": "07:30",
-      "prompt": "Deal-desk morning brief, delivered as Winston. FIRST reconcile your book with overnight mail from your reliable feed: `node ../../scripts/mail.js since 16` (buyer replies overnight, from the relay's Supabase) → update book.js for anything that moved (add/set/note, `since` from the real email date). Then read your book: `node ../../scripts/book.js stats` (health), `node ../../scripts/book.js today` (actionable, fresh first). Then text Sohan this exact structure, tight: (a) TOP 3 — the three hottest 🔥 deals from your book, each one line: company/ref · the single action · $ at stake if known. (b) BALL ON US — count of genuinely actionable (hot+aging), + cold-backlog count as a one-liner ('+N cold >14d — say the word to bulk-review'). (c) CHASES DUE — count of overdue-but-alive (🟡chase), draft ready on request. (d) ONE LINE of state: actionable-vs-dead split + position vs the monthly target in goals.md (if no target, remind once a week max). A trader's morning note, not a soliloquy. FINALLY refresh the Excel: `node ../../scripts/book.js sheet` → memory/GE-Deals.xlsx; mention it's updated in one short line."
+      "prompt": "Deal-desk morning brief, delivered as Winston. Run `node ../../scripts/status.js sweep 7 --book` — every buyer ping of the last 7 days, each two-sided card derived from the REAL threads (SELL: replied-or-not, ball; BUY: factory price state) and written into your book. Then text Sohan this exact structure, tight: (a) ❌ UNANSWERED — buyers who pinged and got NO reply, worst first: who, what they said (quote), how long. This is the #1 leak. (b) BALL ON US — replied-but-we-owe-the-next-move, freshest first, top 3 with the action. (c) FACTORY GAPS — deals where the buyer is live but the BUY side has no price/no negotiation ('no cost on record — can't price it'). (d) ONE LINE: totals (born · unanswered · ball-us · ball-them) + position vs the monthly target in goals.md (no target set → remind once a week max). A trader's morning note, not a soliloquy. FINALLY refresh the Excel: `node ../../scripts/book.js sheet` → memory/GE-Deals.xlsx; one short line that it's updated."
     },
     {
       "time": "18:00",

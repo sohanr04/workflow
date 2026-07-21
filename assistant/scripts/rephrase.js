@@ -36,12 +36,23 @@ const PROMPT =
   'Tone: warm, brief, direct trade English. Return ONLY the rephrased email ' +
   'text, no commentary, no quotes, no markdown.\n\n---\n' + draft;
 
+// Cheap first: rephrasing a short email is trivial work — the codex MINI tier
+// at low reasoning burns a fraction of the ChatGPT-plan usage. If this CLI
+// version doesn't know the mini model name, retry on the default model.
+const ATTEMPTS = [
+  ['-m', process.env.REPHRASE_MODEL || 'gpt-5.3-codex-mini', '-c', 'model_reasoning_effort="low"'],
+  [],
+];
+function runCodex(extra) {
+  return execFileSync('codex', ['exec', '--skip-git-repo-check', ...extra, PROMPT], {
+    encoding: 'utf8', timeout: 90000, stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
+}
+
 let out = '';
 try {
   // codex exec = non-interactive one-shot on the host's ChatGPT auth.
-  out = execFileSync('codex', ['exec', '--skip-git-repo-check', PROMPT], {
-    encoding: 'utf8', timeout: 90000, stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim();
+  try { out = runCodex(ATTEMPTS[0]); } catch { out = runCodex(ATTEMPTS[1]); }
   // codex may prefix session/log lines; keep from the first greeting-looking line
   const lines = out.split('\n');
   const start = lines.findIndex((l) => /^(hi|hello|dear|good\s)/i.test(l.trim()));

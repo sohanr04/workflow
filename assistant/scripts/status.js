@@ -223,6 +223,35 @@ async function births(days) {
   if (!a0) die('usage: status.js <ref> [--book] | status.js sweep [days] [--book]');
   const tok = await getToken();
 
+  if (a0 === 'fresh') {
+    // THE UNANSWERED LIST as one deterministic command — never hand-built.
+    // Walks every open book deal, re-derives its card from the real threads,
+    // prints ONE line per NOT-REPLIED ping, oldest first. No transcription step
+    // for Winston to fumble: this output IS the list.
+    const bookFile = process.env.WINSTON_BOOK || path.join(process.cwd(), 'memory', 'book.json');
+    let book = {}; try { book = JSON.parse(fs.readFileSync(bookFile, 'utf8')); } catch { die('no book at ' + bookFile); }
+    const open = Object.entries(book.deals || {}).filter(([, d]) => !d.closed).map(([r]) => r);
+    const rows = [];
+    for (const ref of open) {
+      const link = await supplierLink(ref);
+      const d = await readDeal(ref, tok, link);
+      if (!d.msgs.length) continue;
+      const S = sideState(d.sell);
+      if (S.state === 'none' || !(S.theirs > 0 && S.oursAfterPing === 0)) continue; // answered → not fresh
+      // product · qty from the blast subject ("DIS-x · Product · N pieces")
+      const subj = (d.sell.map((m) => m.subject).find((s) => /·.*·/.test(s)) || '').replace(/^\s*(re|fw|fwd):\s*/i, '');
+      const pm = subj.match(/·\s*([^·]+?)\s*·\s*([\d,]+)\s*(?:pieces|pcs|prs)/i);
+      const buyer = (S.who || '?').replace(/\s+is interested.*/i, '').replace(/^[^A-ZÀ-ÿ]*/, '');
+      rows.push({ ref, ts: S.lastTheirs.ts, product: pm ? pm[1] : subj.slice(0, 40), qty: pm ? pm[2] : '?', buyer, price: S.lastPrice && S.lastPrice.from === 'them' ? S.lastPrice.vals[0] : '' });
+    }
+    rows.sort((a, b) => (a.ts || '').localeCompare(b.ts || ''));
+    console.log(`# FRESH (unanswered buyer pings) — ${rows.length}`);
+    for (const r of rows) {
+      console.log(`${day(r.ts)} (${fmtAge(r.ts)}) — ${r.ref} · ${r.product} ${r.qty} · ${r.buyer}${r.price ? ' · their ' + r.price : ''}`);
+    }
+    return;
+  }
+
   if (a0 === 'refresh') {
     // Re-derive the card for every OPEN deal already in the book — this is how
     // existing deals stay current (our replies / factory moves don't create new

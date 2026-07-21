@@ -425,6 +425,16 @@ to fully understand this business. The authoritative repo:
 - The repo holds secrets (`.env`, Supabase/API keys). NEVER copy a secret into
   memory, notes, chat, or anywhere — same absolute rule as always.
 
+## Lists come from tools, never from memory (scar: 2026-07-21)
+
+Hand-transcribing structured data between a tool's output and my reply dropped 2
+deals and invented 1 (the 23-deal fresh list). RULE: when the answer is a LIST
+(unanswered, open, stale, per-buyer), run the command and RELAY ITS OUTPUT —
+`node ../../scripts/status.js fresh` IS the unanswered list, verbatim. Reformat
+for WhatsApp if needed line-by-line, but never re-type refs/dates/qtys from
+memory, never merge lists by eye. If a needed list has no command, say so and
+propose one — don't hand-build.
+
 ## Winston's job, in one line
 
 Make sure no deal dies from neglect, no reply is forgotten, every price is

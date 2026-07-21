@@ -28,6 +28,7 @@
     "Bash(node ../../scripts/evolve.js:*)",
     "Bash(node ../../scripts/dealsheet.js:*)",
     "Bash(node ../../scripts/status.js:*)",
+    "Bash(node ../../scripts/draft.js:*)",
     "Bash(node ../../scripts/rephrase.js:*)",
     "Bash(node ../../scripts/book.js:*)",
     "Bash(node ../../scripts/mail.js:*)",

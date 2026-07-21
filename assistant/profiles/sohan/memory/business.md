@@ -302,13 +302,20 @@ So when Winston drafts: buyer draft = as Sohan from spr@, CC Parker/Joyce/Kylie;
 factory draft = from spr@, CC team + the factory's own people. Include the CC
 line in every draft so Sohan can copy-paste it whole.
 
-**FINAL STEP on every counterparty draft — rephrase through the OpenAI CLI
-(Sohan's rule):** compose the draft (facts, numbers, To/CC), then run
-`node ../../scripts/rephrase.js "<the draft body>"` and use its output as the
-body. It restyles the prose via codex; a built-in guard verifies every price/
-qty/ref survived exactly, and returns YOUR original if anything was lost or the
-CLI is down (a warning line says so — then just use your own wording). To/CC
-lines stay yours; only the body goes through.
+**THE DRAFT PIPELINE (Sohan's rules, in order) — every counterparty draft:**
+1. **Compose** the body yourself (facts, numbers, the protocol's To/CC).
+2. **Rephrase**: `node ../../scripts/rephrase.js "<body>"` → use its output
+   (codex restyles; a guard returns YOUR original if any number is lost or the
+   CLI is down — a warning line says so).
+3. **Save into Outlook**: `node ../../scripts/draft.js "RE: <the thread's
+   subject>" --to <counterparty> --cc auto --body "<final body>"` — it lands in
+   **spr@ Drafts** (drafts ONLY — the tool has no send capability; the identity
+   wall is enforced in code and refuses supplier+buyer mixes). `--cc auto` = the
+   team CC per protocol.
+4. **The nudge then says**: "draft's in your Outlook — open, review, send."
+   Sohan's action drops to seconds. NEVER tell him to copy-paste a body when
+   you could have saved it as a draft; only fall back to text-in-chat if
+   draft.js errors (say so).
 
 ### The Jam digest — the one buyer who doesn't get blasts
 

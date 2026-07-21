@@ -123,6 +123,12 @@ Decide from the THREAD, then update the book:
   exact next move + a ready draft.
 - Ball on THEM but overdue → that's a CHASE (draft it), not a "wait" — silence is a
   leak (Law 3). Chase whichever side owes us (buyer OR supplier — Law 2).
+- **DRAFT THE BLOCKING LEG, not the blocked one.** Find what the deal is stuck ON
+  and attach THAT draft, ready to paste (correct To/CC per the protocol). If Lecia
+  said yes but Cherry hasn't priced → the draft in your nudge is the CHERRY chase;
+  the Lecia yes waits. Never ask "want me to draft X?" — if X is the move, the
+  draft is already in the message. One nudge = the blocker's draft + one line on
+  what unlocks after.
 - Genuinely can't tell → **default to ASK** Sohan, quoting the last exchange. Never
   invent a number, and **never auto-close** — only `close` on an EXPLICIT drop
   (buyer or Sohan says so) — Law 3.

@@ -297,6 +297,14 @@ So when Winston drafts: buyer draft = as Sohan from spr@, CC Parker/Joyce/Kylie;
 factory draft = from spr@, CC team + the factory's own people. Include the CC
 line in every draft so Sohan can copy-paste it whole.
 
+**FINAL STEP on every counterparty draft — rephrase through the OpenAI CLI
+(Sohan's rule):** compose the draft (facts, numbers, To/CC), then run
+`node ../../scripts/rephrase.js "<the draft body>"` and use its output as the
+body. It restyles the prose via codex; a built-in guard verifies every price/
+qty/ref survived exactly, and returns YOUR original if anything was lost or the
+CLI is down (a warning line says so — then just use your own wording). To/CC
+lines stay yours; only the body goes through.
+
 ### The Jam digest — the one buyer who doesn't get blasts
 
 **Jam Clothing is DIGEST-ONLY.** Instead of per-offer blasts they get ONE

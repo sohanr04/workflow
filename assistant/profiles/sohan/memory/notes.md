@@ -14,9 +14,52 @@
   **licensing question** — factory can export but Power needs a license to
   sell in stores. Huge volume; resolve the license path.
 
+- **Pipeline onboarded 2026-07-21.** Reconciled the book from the live inbox (graph.js
+  back up + mail.js relay): 64 buyer replies in 14d → booked 49 real deals (dropped Stanley
+  tests + site E2E tests). Book now 53 deals, 45 actionable, ~49 ball-on-us. Every bite's
+  ball set to US on its reply date — a handful may have been answered in-thread, verify via
+  dealctx before chasing. Biggest live: **DIS-26-3868 Lady's Sweater 27k ~+$13.5k** (Nomndeni,
+  11d). Elephant: **DIS-26070707 Girls' Tees 453k** license blocker. STOP using the engine
+  board (deals.js) for staleness — the book is truth now.
+
 ## Patrol log
 
 <!-- date + topic, one line each. Check before nudging. Prune >1 week old. -->
+- 2026-07-21 (6th patrol): status.js sweep 2 = 2 born (both Noma DIS-26071701 hat + DIS-10753-WL shoes — already nudged 4th patrol today). refresh = 58 open, 26 ❌NOT-REPLIED. Skipped everything nudged today (Noma twin, Caryn 01333, Lecia jogger/bomber, fur coats). Surfaced the **Michelle Sampson (Power, Buyer-Infants) 6-style baby-romper cluster** — all pinged Jul 15, firm buyer prices, ZERO reply 6d, never worked in any patrol = biggest un-worked leak: **DIS-83219-WL 15k @ $0.50 · DIS-81787-DS 10k @ $1.10 · DIS-81786-DS 6k @ $1.44(2pk) · DIS-83158-HQ 4k @ $1.25 · DIS-26-3567 2k @ $0.80 · DIS-81193-AP 2k @ $0.50** (~39k pcs, ~$34k stated demand). dealctx+graph confirmed clean buyer bites, ball genuinely on us, NO supplier cost in any thread → did NOT invent margin; one buyer/same-day = one nudge. Asked Sohan: costs to counter, or which to take? Set book ball=us since 2026-07-15 on all 6.
+- 2026-07-21 (5th patrol): mail.js since 2 = 0 new. Book 46 actionable; top 5 fresh (jogger/bomber/knitted-hat/cotton-shoes/fur-coats) all nudged earlier today (1st–4th). Took the freshest un-worked item: **DIS-01333 Ladies Knit Short Sleeve Tops 1,500 (Nomndeni/Power + Caryn/Choice)**. Thread (dealctx, clean): Nomndeni "take all for R40" Jul 16 (~$2.20), Caryn "price for the units" Jul 17. Supplier cost **$3.10/pc FOB** (relay fwd) → Nomndeni's ~$2.20 is BELOW cost (dead unless supplier drops); Caryn just needs the ask. Ball genuinely on us both legs, cost known, never quoted. Did NOT invent a sell price — asked Sohan the ask for Caryn + flagged Nomndeni below-cost. Set book ball=us since 2026-07-17, buy 3.10.
+- 2026-07-21 (4th patrol): mail.js since 2 = 0 new. Book 46 actionable. Top 3 fresh already worked today
+  (jogger 2nd patrol, bomber 3rd, fur coats 1st). Surfaced the **Noma Fakazi (Power) twin bite** —
+  **DIS-26071701 Knitted Hat 5,000 + DIS-10753-WL Kids Cotton Shoes 5,000**, both quoting/ball-us, silent 2d.
+  Thread (dealctx, clean): Noma emailed Joyce Jul 19 14:00 on BOTH — "interested, please advise your best price";
+  no price out yet, no reply since = clean buyer bite, ball genuinely on us. One buyer, same-day, two styles = one
+  nudge. NO supplier cost in either thread → did NOT invent a number; asked Sohan for the ask/buy cost to quote.
+- 2026-07-21 (3rd patrol): mail.js since 2 = 0 new. Book 4 live. Skipped fur coats (nudged 7-20 + 7-21
+  1st patrol) + skate shoes (ball SUPPLIER, PI/deposit in progress) + jogger (nudged 7-21 2nd patrol).
+  Nudged **DIS-80565-LLJ Mens Knit Bomber Jacket 2,117 (Lecia/Choice)** — twin of the jogger, freshly born
+  on the book (1h). Thread (dealctx clean): Parker locked **R92/pc** 7-10 → "raise order to Forever Fashion,
+  Durban"; sample lost 7-20, then Sohan confirmed 7-21 Lecia found BOTH via WhatsApp + confirmed. So it's a
+  CONFIRMED order sitting on the internal raise step = booked spread leaking, ball genuinely on us. Buy $3.60,
+  sell R92. Teed up the raise line to Joyce; no FX invented (sell in Rand).
+- 2026-07-21 (2nd patrol): mail.js since 2 = 0 new. Book 3 live. Skipped fur coats (nudged both 7-20 and
+  7-21) + skate shoes (ball on SUPPLIER, PI/deposit in progress). Nudged **DIS-80499-LLJ Men Zip Pocket
+  Jogger Pants 1,208 (Lecia/Choice)** — freshest on the board + a CONFIRMED order sitting unraised = booked
+  spread leaking on an internal step. Sohan confirmed 7-21: Lecia found the sample via WhatsApp + confirmed
+  both. Sell $2.90, buy $2.39 → ~$616 on the lot, ours to book. Ball genuinely on us: Joyce raises it.
+  Teed up a ready line to Joyce; no number invented (both legs from the book).
+- 2026-07-21: patrol. mail.js since 2/24 = 0 new. Book still 2 live. graph.js DOWN (ETIMEDOUT) so
+  dealctx thread pull failed — mail.js relay side only (fur coats shows just the 16 Jul site-interest
+  question; the "yes send sample" line is supplier/team-side, unreadable today). BUMPED **DIS-73913-AG
+  Fur Coats 3,600 (Power/Mandisa)** one line — same ball-on-us sample leak as yesterday, now 5d (past
+  3d window), no movement/green-light. Asked again: OK to courier the sample (Joyce/Toni-Ann)? No
+  number invented. DIS-26071506 skate shoes = ball on SUPPLIER (PI/deposit in progress) → not on us,
+  skipped. Flagged graph.js still dark.
+- 2026-07-20: patrol. mail.js since 2 = 0 new. Book has 2 live deals. Nudged **DIS-73913-AG
+  Ladies Fur Coats 3,600 (Power/Mandisa)** — freshest ball-on-US leak (sample, ball us 4d).
+  Thread clean (dealctx): Joyce quoted $4.60 clear-all 16 Jul, Mandisa same day "yes send sample,
+  working on costings on my selections" → ball on us to SHIP the sample, sitting 4d. ~$16.6k lot,
+  warmest thing on the board. Teed up shipping the sample + a ready reply to Mandisa; asked Sohan
+  to green-light Toni-Ann/Joyce to courier it. Other live deal DIS-26071506 skate shoes = ball on
+  SUPPLIER (PI/deposit in progress, Parker cleared) → not on us, skipped. No number invented.
 - 2026-07-15 (2nd patrol): surfaced **DIS-80329-JJ Boys Pocket Tee 5,000 (Power Fashion)** — the
   freshest un-nudged QUOTED dollar leak left on the board (stage quoted = buyer bit, ball flipped to
   US, silent 290h/~12d, not in deals.md, never nudged). Walked `today` freshest-up: everything ≤223h

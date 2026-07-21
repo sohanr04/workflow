@@ -101,15 +101,9 @@ get from a card or a thread.**
    HARDER** (not dead — a deal silent a month is a leak you've been ignoring).
 
 ```
-node ../../scripts/book.js today                 # your actionable queue, fresh first
-node ../../scripts/book.js list cold             # the badly-overdue — chase biggest-$ first
-node ../../scripts/book.js get <ref>             # one deal + lifecycle + history
-node ../../scripts/book.js add <ref> --product ".." --qty 5000 --buyer "Lecia/Choice" --supplier "Cherry/Gbest" --ball us --stage quoting --sell 3.20 --buy 2.45 --next ".." --note ".."
-node ../../scripts/book.js set <ref> --ball supplier --since 2026-07-14 --buy 1.80 --next ".."
-node ../../scripts/book.js note <ref> "Cherry came back at $2.45"
-node ../../scripts/book.js close <ref> --outcome won|lost --reason ".."
-node ../../scripts/book.js stats                 # health census
-node ../../scripts/book.js sheet                 # export → memory/GE-Deals.xlsx
+node ../../scripts/book.js today | stats | get <ref> | list cold
+node ../../scripts/book.js add|set <ref> --ball us|buyer|supplier --since <date> --buy 1.80 --sell 2.50 --next ".."
+node ../../scripts/book.js note <ref> ".." · close <ref> --outcome won|lost --reason ".." · sheet
 ```
 
 **Keeping the book honest — the rules:**

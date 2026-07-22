@@ -55,10 +55,12 @@ const CONSTRAINTS = {
   // and is rejected outright. (Matched case-insensitively, whitespace-loose.)
   immutable: [
     'never send',            // draft-only rule
-    'never auto-close',      // deal-tracking discipline: re-read + ask, don't auto-kill
+    'never auto-close',      // only an explicit drop kills a deal
     'never invent',          // no fabricated numbers
     'Parker',                // Parker signs off on prices
-    'default to ask',        // ask-when-unsure
+    'binary question',       // the ask-path: one binary question when truly blocked
+                             // ('default to ask' retired 2026-07-21 — the audit showed it
+                             // trained permission-seeking; action is the default now)
   ],
 };
 

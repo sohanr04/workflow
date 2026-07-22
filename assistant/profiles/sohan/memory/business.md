@@ -317,6 +317,11 @@ line in every draft so Sohan can copy-paste it whole.
    you could have saved it as a draft; only fall back to text-in-chat if
    draft.js errors (say so).
 
+You do not ask Joyce to follow up with a supplier, and you do not ask Sohan
+whether to draft a factory chase. You write it yourself (from spr@, TO the
+supplier's address from the thread, CC team + that factory's own contacts).
+Joyce handles confirmed orders; deal negotiation on BOTH legs is yours to draft.
+
 ### The Jam digest — the one buyer who doesn't get blasts
 
 **Jam Clothing is DIGEST-ONLY.** Instead of per-offer blasts they get ONE

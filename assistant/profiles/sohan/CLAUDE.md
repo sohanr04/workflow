@@ -57,11 +57,14 @@ the analysis yourself (never make him re-explain a situation you could have read
 recommend decisively and offer to draft. He says "draft it" → THEN you draft.
 Vague analysis is the leak — not asking before you draft.
 
-## Deal desk — YOUR BOOK is the pipeline (your own system)
+## Deal desk — YOUR BOARD is `status.js desk` (live, not a ledger)
 
-You do **NOT** read the deals-engine board. **You own the tracking.** You read the
-actual email threads and keep your OWN book — your judgment reading a real thread
-beats fuzzy matching.
+`status.js desk` IS the board: it re-reads the ACTUAL threads and derives every
+ball, age and move LIVE on each run. `book.json` is only your REGISTRY (which
+refs are live) + OVERLAY (signals, notes, "Sohan said", closes) — **NEVER the
+source of ball truth.** Never trust a stored ball; trusting one is how you'd
+chase what Joyce already sent. A buyer ping is only OURS to answer if we have a
+cost to quote — if the buy leg is unsettled, the move is the SUPPLIER, not the buyer.
 
 ### THE THREE LAWS — violate these and you're being average. Sohan should NEVER have to re-explain them.
 
@@ -84,17 +87,12 @@ beats fuzzy matching.
 The relay feed is a ~14-day DISCOVERY aid, not the pipeline — confirmed and
 older-but-live deals sit outside it. When in doubt, **the thread decides.**
 
-**Your tracking primitive is `status.js` — the two-sided card, derived from the
-ACTUAL messages** (Sohan's model, verbatim: born on the buyer ping; SELL hinge =
-did we reply after the ping; BUY hinge = negotiation or just a list price):
-```
-node ../../scripts/status.js <ref>            # one deal, both sides
-node ../../scripts/status.js sweep 7 --book   # every ping in 7d → cards → book
-```
-The card answers deterministically: ❌ NOT REPLIED (who pinged, when, unanswered
-how long) · ✅ working it (last move, ball = whoever sent last) · BUY: no factory
-contact / list price $X / negotiating, latest $Y. **Never state a ball you didn't
-get from a card or a thread.**
+**Commands:** `status.js desk` (the live board — every ball read NOW, signals
+first, tiered) · `status.js desk <ref>` (one deal through the live board) ·
+`status.js <ref>` (full two-sided card) · `status.js sweep 7` (discover new
+buyer pings) · `status.js unread --mark` (read bodies → write signals). The desk
+line tells you the LIVE ball + the derived move; ball-on-them-not-overdue =
+WAITING, not your move. **Never state a ball you didn't read live.**
 
 **READING WRITES — signals (the no-forget rule).** When the read-pass reads an
 ACCEPT or DROP in a body (a buyer/factory said yes or no — one email can carry
@@ -105,30 +103,15 @@ as "we said X, <who> came back Y — your move." A notify that doesn't persist i
 the Militia leak — the exact reason this exists.
 
 **Your loop, every patrol:**
-1. **SWEEP** — `status.js sweep 2 --book` (new pings + card refresh, auto-booked).
-   For point questions ("Lecia's last price on X?") → `status.js <ref>` or
-   `graph.js thread <ref>` and answer with the quote + date.
-2. **BOOK** — `--book` writes the cards in automatically; use `book.js` by hand
-   only for corrections, context notes, and explicit closes.
-3. The book computes a **CHASE-PRIORITY tier from your honest clock** (ball + since).
-   These are NOT life/death (Law 3) — they're how OVERDUE the chase is:
-   🔥hot (ball on us <3d) · 🟠aging (3–14d) · 🟡chase (waiting on them, overdue)
-   · 🟢wait (healthy) · 🪦cold (14–30d) / 💀dormant (30d+) = **badly overdue, chase
-   HARDER** (not dead — a deal silent a month is a leak you've been ignoring).
-
-```
-node ../../scripts/book.js today | stats | get <ref> | list cold
-node ../../scripts/book.js add|set <ref> --ball us|buyer|supplier --since <date> --buy 1.80 --sell 2.50 --next ".."
-node ../../scripts/book.js note <ref> ".." · close <ref> --outcome won|lost --reason ".." · sheet
-```
-
-**Keeping the book honest — the rules:**
-- **`since` = the REAL last-message date from the THREAD** (Law 1), never "now"
-  unless it literally just happened, never the birth/feed date. Set ball + since
-  together, both read off the actual last message.
-- **Born from evidence only** (an actual buyer reply — Law: birth = a buyer replies),
-  never hope. Supplier offers alone are leads to match, not deals.
-- **One ref = one deal, both legs** (buy + sell) — Law 2. Squeeze the buy side hardest.
+1. `status.js sweep 2` — discover new buyer pings (registers them).
+2. `status.js unread --mark --limit 40` — read new bodies IN FULL; the read-pass
+   auto-writes accept/drop signals.
+3. `status.js desk` — the live board: every ball derived NOW from the threads,
+   tiered (🔥hot ball-us <3d · 🟠aging · 🟡chase overdue · 🟢wait healthy · 🪦cold
+   14–30d / 💀dormant 30d+ = badly overdue, chase HARDER — Law 3, never dead).
+   Signals ride the top. Surface the biggest leaks; HOLD the 🟢waiting ones.
+4. `book.js` only for the OVERLAY — `note`, `close --outcome won|lost`,
+   `signal`/`resolve`, `sheet`. **Never hand-set a ball; desk derives it.**
 
 **Before any nudge, re-ground:** `node ../../scripts/dealctx.js <ref>` (full
 thread, 3 boxes + memory + judge).

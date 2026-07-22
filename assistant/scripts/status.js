@@ -432,7 +432,10 @@ async function births(days) {
       const buyP = B.lastPrice ? B.lastPrice.vals[0] : (link.price ? ('$' + String(link.price).replace(/[^0-9.]/g, '')) : (ov.buy ? '$' + ov.buy : null));
       const sellP = (S.lastPrice && S.lastPrice.from === 'them') ? S.lastPrice.vals[0] : (ov.sell ? '$' + ov.sell : null);
       const b = parseFloat((buyP || '').replace(/[^0-9.]/g, '')), s = parseFloat((sellP || '').replace(/[^0-9.]/g, '')), q = parseFloat(ov.qty || '');
-      const spread = (b && s && q) ? Math.round((s - b) * q) : null;
+      // only show a spread we can believe: both legs present, distinct, positive.
+      // identical/inverted = the price parser grabbed the wrong number → hide it,
+      // don't surface fake precision (buy/sell prices still shown raw for the eye).
+      const spread = (b && s && q && s > b) ? Math.round((s - b) * q) : null;
       // write the derived state back as a reader-down FALLBACK only (display is always live)
       const dd = book.deals[ref]; if (dd) { dd.ball = ball === 'buyer' ? 'buyer' : ball; dd.since = since; dd.derived_at = new Date().toISOString(); }
       return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, spread, product: ov.product || '', qty: ov.qty || '' };

@@ -117,7 +117,28 @@ function refMatches(text, ref) {
   return new RegExp(esc + '(?![0-9])', 'i').test(String(text || ''));
 }
 
-module.exports = { stripQuoted, extractPrices, classify, refMatches, fmtP, marginFlag, AGREE_RE };
+// ── DIS ↔ supplier-code reverse map, via the shared numeric core ──────────────
+// The relay mints DIS-26-3964 from Gbest's GBT26-3964 (and SP10753-WL ↔
+// DIS-10753-WL). Strip the vendor prefix → the remainder is the JOIN KEY.
+const CODE_RE = /\b(DIS|GBT|SP|KG|SPR)[- ]?(\d{2,}(?:-\d+)*(?:-[A-Z]{1,4})?)/gi;
+function core(ref) {
+  return String(ref || '').toUpperCase().replace(/^(DIS|GBT|SP|KG|SPR)[- ]?/, '').replace(/[^0-9A-Z]/g, '');
+}
+function sameCore(a, b) { const x = core(a); return !!x && x === core(b); }
+// the searchable suffix (with its dash) — appears in BOTH DIS and supplier subjects
+function disSuffix(ref) { return String(ref || '').toUpperCase().replace(/^DIS[- ]?/, ''); }
+// pull a supplier code (GBT/SP/KG…, NOT DIS) out of a subject line, same-core only
+function supplierCodeIn(text, ref) {
+  let m; CODE_RE.lastIndex = 0;
+  while ((m = CODE_RE.exec(String(text || '')))) {
+    const code = (m[1] + m[2]).toUpperCase();
+    if (/^DIS/.test(code)) continue;
+    if (!ref || sameCore(code, ref)) return code.replace(/^(GBT|SP|KG|SPR)/, '$1'); // normalize spacing only
+  }
+  return null;
+}
+
+module.exports = { stripQuoted, extractPrices, classify, refMatches, core, sameCore, disSuffix, supplierCodeIn, fmtP, marginFlag, AGREE_RE };
 
 // ── self-test on the walked deals ────────────────────────────────────────────
 if (require.main === module) {
@@ -178,4 +199,15 @@ if (require.main === module) {
   T('ref no-collision', refMatches('DIS-26-33344 · LADY\'S TOP', 'DIS-26-3334'), false);
   T('ref exact hit', refMatches('RE: DIS-26-3334 · LADY\'S PANTS', 'DIS-26-3334'), true);
   T('ref suffix ok', refMatches('DIS-80549-LLJ quilted', 'DIS-80549-LLJ'), true);
+
+  // reverse map — the shared core
+  T('core DIS==GBT', sameCore('DIS-26-3964', 'GBT26-3964'), true);
+  T('core DIS==SP', sameCore('DIS-10753-WL', 'SP10753-WL'), true);
+  T('core different', sameCore('DIS-26-3964', 'GBT26-3334'), false);
+  T('core no 33344 bleed', sameCore('DIS-26-3334', 'GBT26-33344'), false);
+  T('suffix searchable', disSuffix('DIS-26-3964'), '26-3964');
+  T('supplier code extract', supplierCodeIn("GBT26-3964MEN'S PADDED VEST", 'DIS-26-3964'), 'GBT26-3964');
+  T('supplier code SP', supplierCodeIn('Attached SP10753-WL kids shoes', 'DIS-10753-WL'), 'SP10753-WL');
+  T('supplier code rejects DIS', supplierCodeIn('DIS-26-3964 offer', 'DIS-26-3964'), null);
+  T('supplier code rejects wrong-core', supplierCodeIn('GBT26-9999 other', 'DIS-26-3964'), null);
 }

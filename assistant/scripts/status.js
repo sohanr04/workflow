@@ -28,7 +28,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { BOXES, getToken, graph } = require('./graph');
 const { retryFetch } = require('./_net');
-const { classify, refMatches, fmtP, marginFlag } = require('./prices');
+const { classify, refMatches, core, sameCore, disSuffix, supplierCodeIn, fmtP, marginFlag } = require('./prices');
 
 // ── who is who ───────────────────────────────────────────────────────────────
 const US_DOMAINS = ['grandempirehk.com', 'district-stock.com'];
@@ -93,9 +93,13 @@ async function supplierLink(ref) {
 // ── read one deal: all messages for the ref, split into the two sides ────────
 async function readDeal(ref, tok, link = {}) {
   const rows = [];
+  // search the DIS ref, the relay-known supplier code, AND the shared suffix
+  // ("26-3964") which appears in BOTH the DIS blast and the GBT/SP supplier
+  // subjects — so the buy thread is found even when the relay has no mapping.
   const terms = [ref];
-  // the factory thread lives under the SUPPLIER's ref — search it too
-  if (link.style && link.style.toUpperCase() !== ref.toUpperCase()) terms.push(link.style);
+  if (link.style && !sameCore(link.style, ref)) terms.push(link.style);
+  const suffix = disSuffix(ref);
+  if (suffix && suffix !== ref) terms.push(suffix);
   for (const [key, mb] of Object.entries(BOXES)) {
     for (const t of terms) {
       const j = await graph(`/users/${mb}/messages?$search=${encodeURIComponent('"' + t + '"')}&$select=id,subject,from,toRecipients,receivedDateTime,bodyPreview&$top=50`, tok);
@@ -105,13 +109,19 @@ async function readDeal(ref, tok, link = {}) {
   // de-dupe (same message can appear via CC in two boxes) by date+subject
   const seen = new Set();
   const REFTOK = /\b(?:DIS|GBT|SP|KG)[- ]?\d[\d-]*[A-Z]*/i;
+  let supplierCode = link.style || null;
   const msgs = rows.filter((m) => {
     const k = `${(m.receivedDateTime || '').slice(0, 16)}|${(m.subject || '').slice(0, 60)}|${m.from?.emailAddress?.address || ''}`;
     if (seen.has(k)) return false; seen.add(k);
-    // exact-ref boundary: a subject carrying a DIFFERENT ref (DIS-26-33344 when we
-    // asked for DIS-26-3334) poisons the deal with a neighbour's messages — drop it.
     const hay = `${m.subject || ''} ${m.bodyPreview || ''}`;
-    if (REFTOK.test(m.subject || '') && !terms.some((t) => refMatches(hay, t))) return false;
+    // keep only messages that BOUNDARY-match the DIS ref OR share its core with a
+    // supplier code (kills DIS-26-33344 bleed; keeps GBT26-3964 same-core threads).
+    if (REFTOK.test(m.subject || '')) {
+      const hitDis = refMatches(hay, ref);
+      const sc = supplierCodeIn(m.subject || '', ref); // same-core GBT/SP code
+      if (!hitDis && !sc) return false;
+      if (sc && !supplierCode) supplierCode = sc; // learn the supplier code from the thread
+    }
     return true;
   }).sort((a, b) => (a.receivedDateTime || '').localeCompare(b.receivedDateTime || ''));
 
@@ -138,7 +148,7 @@ async function readDeal(ref, tok, link = {}) {
       text, // subject + preview, for the confirmed-vs-ask price classifier
     });
   }
-  return { msgs, sell, buy };
+  return { msgs, sell, buy, supplierCode };
 }
 
 // derive one side's state from its messages (the hinge logic)
@@ -208,13 +218,16 @@ function card(ref, d, link = {}) {
   }
   // BUY side — the hinge is negotiation
   if (B.state === 'none') {
-    // no factory thread — but the relay may still know the supplier + list price
-    if (link.price || link.name) out.push(`BUY:  no negotiation — supplier ${link.name || '?'}${link.style ? ` (${link.style})` : ''}, their list price: ${link.price || 'no price on record'}`);
-    else out.push(`BUY:  no factory contact for this ref — no negotiation, no price on record`);
+    // no factory thread — but the relay/core-match may still know the supplier code
+    const supCode = d.supplierCode || link.style;
+    if (link.price || link.name || supCode) out.push(`BUY:  no negotiation started — supplier ${link.name || '?'}${supCode ? ` (${supCode})` : ''}${link.email ? ` · ${link.email}` : ''}, list price: ${link.price || 'none on record — source it'}`);
+    else out.push(`BUY:  no factory contact for this ref — SOURCE the supplier code + price`);
   } else {
     const sup = B.who || '?';
+    const supCode = d.supplierCode || link.style;
     if (B.ours === 0) out.push(`BUY:  offer only from ${sup} — no negotiation started`);
     else out.push(`BUY:  negotiating with ${sup} — last move ${day(B.last.ts)} (${fmtAge(B.last.ts)}) by ${B.last.us ? 'US' : 'them'} → ball = ${B.state === 'ball-us' ? 'US' : 'them'}`);
+    if (supCode || link.email) out.push(`      ↳ supplier thread: ${supCode || '?'}${link.email ? ` · ${link.email}` : (B.who && /@/.test(B.who) ? ` · ${B.who}` : '')} (negotiate here)`);
     const bc = B.cls || {};
     if (bc.confirmed) out.push(`      confirmed cost: ${fmtP(bc.confirmed)}${bc.confirmed.viaAgreedAsk ? ' (AGREED to our ask' : ' (their offer'}, ${day(bc.confirmed.when)})`);
     else if (link.price) out.push(`      confirmed cost: $${String(link.price).replace(/[^0-9.]/g, '')} (their list, relay record)`);
@@ -473,7 +486,7 @@ async function births(days) {
       else if (ball === 'us' && sellUnanswered && b && (!mg || mg.flag !== '⛔')) next = `QUOTE ${buyer} ~$${(Math.ceil(b * 120) / 100).toFixed(2)} (cost ${buyP} +20%)`;
       // write the derived state back as a reader-down FALLBACK only (display is always live)
       const dd = book.deals[ref]; if (dd) { dd.ball = ball === 'buyer' ? 'buyer' : ball; dd.since = since; dd.derived_at = new Date().toISOString(); }
-      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, mg, product: ov.product || '', qty: ov.qty || '' };
+      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, mg, supCode: d.supplierCode || link.style || null, supEmail: link.email || (B.who && /@/.test(B.who) ? B.who : null), product: ov.product || '', qty: ov.qty || '' };
     })).filter(Boolean);
     try { fs.writeFileSync(bookFile, JSON.stringify(book, null, 2)); } catch { /* cache best-effort */ }
     // signals first, then canonical tier order, then most-overdue
@@ -488,7 +501,7 @@ async function births(days) {
       const px = (r.buyP || r.sellP || r.askP) ? `  [cost ${r.buyP || 'none'} · buyer ${r.sellP || 'open'}${r.askP ? ' · our ask ' + r.askP + ' pending' : ''}]` : '';
       const sg = r.sig ? `  ⚠️${r.sig.kind.toUpperCase()}:"${(r.sig.phrase || '').slice(0, 24)}"` : '';
       console.log(`${tag.padEnd(9)} ball=${String(r.ball).padEnd(8)} ${fmtAge(new Date(Date.now() - r.silentH * 3.6e6).toISOString()).padStart(4)}  ${r.ref} · ${(r.product || '').slice(0, 26)}${r.qty ? ' ' + r.qty : ''}${money}${sg}`);
-      console.log(`          → ${r.next}${px}`);
+      console.log(`          → ${r.next}${px}${r.supCode ? `  ·  supplier ${r.supCode}${r.supEmail ? ' ' + r.supEmail : ''}` : ''}`);
     }
     console.log(`\n# ${rows.length} deals · signals ${nSig} · actionable ${act} · waiting ${rows.filter((r) => r.tier === 'waiting').length} — ball-on-them + not overdue = WAITING, not your move.`);
     return;

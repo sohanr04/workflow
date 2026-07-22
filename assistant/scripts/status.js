@@ -438,7 +438,11 @@ async function births(days) {
       const sPromise = S.state === 'ball-us' && S.last && PROMISE_RE.test(S.last.text || '');
       const buyWaiting = (B.state === 'ball-them' && B.ours > 0) || bPromise;
       const havePrice = !!((B.cls && B.cls.confirmed) || link.price || ov.buy); // a CONFIRMED cost to quote with
-      if (B.state === 'ball-us' && !bPromise) { ball = 'us'; since = B.last.ts; next = `ANSWER ${sup} — they replied, we owe`; }
+      // AMMUNITION rule (Sohan): a supplier's last message that CARRIES a price
+      // is not a debt to answer — it's the cost to work the sell side with. Don't
+      // lock the supplier until the buyer confirms.
+      const bAmmo = B.state === 'ball-us' && B.cls && B.cls.confirmed && B.last && B.cls.confirmed.when >= B.last.ts;
+      if (B.state === 'ball-us' && !bPromise && !bAmmo) { ball = 'us'; since = B.last.ts; next = `ANSWER ${sup} — they replied, we owe`; }
       else if (buyWaiting) { ball = 'supplier'; since = B.last.ts; next = bPromise ? `${sup} promised ("will send") — hold them to it` : `waiting on ${sup}${sellUnanswered ? ` — ${buyer} waits on this` : ''}`; }
       else if (sellUnanswered) { ball = 'us'; since = S.lastTheirs.ts; next = havePrice ? `REPLY ${buyer} — pinged, unanswered` : `SOURCE a cost, then quote ${buyer} — pinged, unanswered`; }
       else if (S.state === 'ball-us' && !sPromise) { ball = 'us'; since = S.last.ts; next = `MOVE on ${buyer}`; }

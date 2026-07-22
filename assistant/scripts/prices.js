@@ -101,13 +101,23 @@ function classify(msgs) {
 
 const fmtP = (p) => p == null ? null : `${p.cur === 'ZAR' ? 'R' : p.cur === 'USD' ? '$' : '~'}${p.val}`;
 
+// Sohan's margin rule: (sell − cost)/cost. Target 20%, floor 15%.
+// Only computed across same/unknown currency — never R vs $ (FX parked).
+function marginFlag(cost, sell) {
+  if (!cost || !sell || !cost.val || !sell.val) return null;
+  if (cost.cur !== sell.cur && cost.cur !== '?' && sell.cur !== '?') return null;
+  const pct = Math.round(((sell.val - cost.val) / cost.val) * 100);
+  const flag = sell.val <= cost.val ? '⛔' : pct >= 20 ? '🟢' : pct >= 15 ? '🟡' : '🔴';
+  return { pct, flag };
+}
+
 // exact-ref boundary match — DIS-26-3334 must NOT match inside DIS-26-33344
 function refMatches(text, ref) {
   const esc = String(ref).toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(esc + '(?![0-9])', 'i').test(String(text || ''));
 }
 
-module.exports = { stripQuoted, extractPrices, classify, refMatches, fmtP, AGREE_RE };
+module.exports = { stripQuoted, extractPrices, classify, refMatches, fmtP, marginFlag, AGREE_RE };
 
 // ── self-test on the walked deals ────────────────────────────────────────────
 if (require.main === module) {

@@ -28,7 +28,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { BOXES, getToken, graph } = require('./graph');
 const { retryFetch } = require('./_net');
-const { classify, refMatches, fmtP } = require('./prices');
+const { classify, refMatches, fmtP, marginFlag } = require('./prices');
 
 // ── who is who ───────────────────────────────────────────────────────────────
 const US_DOMAINS = ['grandempirehk.com', 'district-stock.com'];
@@ -458,9 +458,13 @@ async function births(days) {
       const sameCur = bc && scf ? (bc.cur === scf.cur || bc.cur === '?' || scf.cur === '?') : true;
       const q = parseFloat(ov.qty || '');
       const spread = (b && s && q && sameCur && s > b) ? Math.round((s - b) * q) : null;
+      // margin flags (20% target / 15% floor on cost) + shape-aware moves
+      const mg = marginFlag(bc || (b ? { val: b, cur: '?' } : null), scf);
+      if (ball === 'us' && mg && mg.flag === '⛔') next = `SQUEEZE ${sup} down / push ${buyer} up — buyer ${sellP} UNDER cost ${buyP}`;
+      else if (ball === 'us' && sellUnanswered && b && (!mg || mg.flag !== '⛔')) next = `QUOTE ${buyer} ~$${(Math.ceil(b * 120) / 100).toFixed(2)} (cost ${buyP} +20%)`;
       // write the derived state back as a reader-down FALLBACK only (display is always live)
       const dd = book.deals[ref]; if (dd) { dd.ball = ball === 'buyer' ? 'buyer' : ball; dd.since = since; dd.derived_at = new Date().toISOString(); }
-      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, product: ov.product || '', qty: ov.qty || '' };
+      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, mg, product: ov.product || '', qty: ov.qty || '' };
     })).filter(Boolean);
     try { fs.writeFileSync(bookFile, JSON.stringify(book, null, 2)); } catch { /* cache best-effort */ }
     // signals first, then canonical tier order, then most-overdue
@@ -471,7 +475,7 @@ async function births(days) {
     console.log(`# DESK — ${rows.length} live deals · ${nSig} signals · ${act} actionable · every ball read LIVE from the threads (${day(new Date().toISOString())})\n`);
     for (const r of rows) {
       const tag = (LC.LC_TAG[r.tier] || r.tier);
-      const money = r.spread ? ` ($${r.spread.toLocaleString()})` : '';
+      const money = `${r.spread ? ` ($${r.spread.toLocaleString()})` : ''}${r.mg ? ` ${r.mg.flag}${r.mg.pct}%` : ''}`;
       const px = (r.buyP || r.sellP || r.askP) ? `  [cost ${r.buyP || 'none'} · buyer ${r.sellP || 'open'}${r.askP ? ' · our ask ' + r.askP + ' pending' : ''}]` : '';
       const sg = r.sig ? `  ⚠️${r.sig.kind.toUpperCase()}:"${(r.sig.phrase || '').slice(0, 24)}"` : '';
       console.log(`${tag.padEnd(9)} ball=${String(r.ball).padEnd(8)} ${fmtAge(new Date(Date.now() - r.silentH * 3.6e6).toISOString()).padStart(4)}  ${r.ref} · ${(r.product || '').slice(0, 26)}${r.qty ? ' ' + r.qty : ''}${money}${sg}`);

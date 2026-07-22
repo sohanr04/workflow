@@ -373,6 +373,73 @@ async function births(days) {
     return;
   }
 
+  if (a0 === 'desk') {
+    // ── THE LIVE SYSTEM BOARD ────────────────────────────────────────────────
+    // Every ball, age and price is DERIVED FROM THE ACTUAL THREADS on every run
+    // — never a stored or hand-typed value. book.json is demoted to two things:
+    // the REGISTRY (which refs are live deals) and the OVERLAY (judgment that
+    // isn't in the threads: signals, notes, "Sohan said hold", close/outcome).
+    // This is the fix for stale "ball on us" — you can no longer be told to chase
+    // what Joyce already sent, because the ball is re-read live from her email.
+    const LC = require('./lifecycle');
+    const bookFile = process.env.WINSTON_BOOK || path.join(process.cwd(), 'memory', 'book.json');
+    let book = {}; try { book = JSON.parse(fs.readFileSync(bookFile, 'utf8')); } catch { die('no book at ' + bookFile); }
+    const only = (a1 && /^(DIS|GBT|SP|KG)/i.test(a1)) ? a1.toUpperCase() : null; // desk <ref> = one deal through the live board
+    const limit = parseInt(a1, 10) || 0;                                          // desk <N> = cap the sweep
+    let open = Object.entries(book.deals || {}).filter(([, d]) => !d.closed);
+    if (only) open = open.filter(([r]) => r.toUpperCase() === only);
+    else if (limit) open = open.slice(0, limit);
+    const nameOf = (s) => (s || '?').replace(/\s+is interested.*/i, '').replace(/^[^A-Za-zÀ-ÿ]*/, '').slice(0, 22);
+    const rows = [];
+    for (const [ref, ov] of open) {
+      const link = await supplierLink(ref);
+      const d = await readDeal(ref, tok, link);
+      const sig = ov.signal && !ov.signal.resolved ? ov.signal : null;
+      if (!d.msgs.length) { rows.push({ ref, ov, sig, tier: 'unread', ball: '?', silentH: 0, next: 'no thread found — check ref', line: true }); continue; }
+      const S = sideState(d.sell), B = sideState(d.buy);
+      // LIVE ball derivation (the same rule the card uses) — read, not stored
+      let ball, since, next;
+      const buyer = nameOf(S.who), sup = B.who || (link.name || 'supplier');
+      if (S.state !== 'none' && S.theirs > 0 && S.oursAfterPing === 0) { ball = 'us'; since = S.lastTheirs.ts; next = `REPLY ${buyer} — pinged, unanswered`; }
+      else if (B.state === 'ball-us') { ball = 'us'; since = B.last.ts; next = `ANSWER ${sup} — they replied, we owe`; }
+      else if (S.state === 'ball-us') { ball = 'us'; since = S.last.ts; next = `MOVE on ${buyer}`; }
+      else if (B.state === 'ball-them' && B.ours > 0) { ball = 'supplier'; since = B.last.ts; next = `waiting on ${sup}`; }
+      else if (S.state === 'ball-them') { ball = 'buyer'; since = S.last.ts; next = `waiting on ${buyer}`; }
+      else { ball = 'us'; since = (d.msgs[d.msgs.length - 1] || {}).ts; next = 'review thread'; }
+      const silentH = since ? (Date.now() - new Date(since).getTime()) / 3.6e6 : 0;
+      // tier from LIVE silence, canonical thresholds (lifecycle.js — one source)
+      let tier;
+      if (ball === 'us') tier = silentH <= LC.HOT_MAX_H ? 'hot' : (silentH >= LC.DORMANT_MIN_H ? 'dormant' : silentH >= LC.COLD_MIN_H ? 'cold' : 'aging');
+      else { const t = ball === 'supplier' ? LC.WAIT_SUP_H : LC.WAIT_CUST_H; tier = silentH >= LC.DORMANT_MIN_H ? 'dormant' : silentH >= LC.COLD_MIN_H ? 'cold' : (silentH <= t ? 'waiting' : 'chase_due'); }
+      // waiting-but-overdue → the move is a chase on the SAME thread
+      if (tier === 'chase_due') next = `CHASE ${ball === 'supplier' ? sup : buyer} — silent ${fmtAge(since)} on our last`;
+      const buyP = B.lastPrice ? B.lastPrice.vals[0] : (link.price ? ('$' + String(link.price).replace(/[^0-9.]/g, '')) : (ov.buy ? '$' + ov.buy : null));
+      const sellP = (S.lastPrice && S.lastPrice.from === 'them') ? S.lastPrice.vals[0] : (ov.sell ? '$' + ov.sell : null);
+      const b = parseFloat((buyP || '').replace(/[^0-9.]/g, '')), s = parseFloat((sellP || '').replace(/[^0-9.]/g, '')), q = parseFloat(ov.qty || '');
+      const spread = (b && s && q) ? Math.round((s - b) * q) : null;
+      rows.push({ ref, ov, sig, tier, ball, silentH, next, buyP, sellP, spread, product: ov.product || '', qty: ov.qty || '' });
+      // write the derived state back as a reader-down FALLBACK only (display is always live)
+      const dd = book.deals[ref]; if (dd) { dd.ball = ball === 'buyer' ? 'buyer' : ball; dd.since = since; dd.derived_at = new Date().toISOString(); }
+    }
+    try { fs.writeFileSync(bookFile, JSON.stringify(book, null, 2)); } catch { /* cache best-effort */ }
+    // signals first, then canonical tier order, then most-overdue
+    const rank = (r) => (r.sig ? -1 : 0);
+    rows.sort((a, x) => rank(a) - rank(x) || (LC.LC_ORDER.indexOf(a.tier) - LC.LC_ORDER.indexOf(x.tier)) || x.silentH - a.silentH);
+    const nSig = rows.filter((r) => r.sig).length;
+    const act = rows.filter((r) => LC.ACTIONABLE.has(r.tier)).length;
+    console.log(`# DESK — ${rows.length} live deals · ${nSig} signals · ${act} actionable · every ball read LIVE from the threads (${day(new Date().toISOString())})\n`);
+    for (const r of rows) {
+      const tag = (LC.LC_TAG[r.tier] || r.tier);
+      const money = r.spread ? ` ($${r.spread.toLocaleString()})` : '';
+      const px = (r.buyP || r.sellP) ? `  [buy ${r.buyP || '?'} · sell ${r.sellP || '?'}]` : '';
+      const sg = r.sig ? `  ⚠️${r.sig.kind.toUpperCase()}:"${(r.sig.phrase || '').slice(0, 24)}"` : '';
+      console.log(`${tag.padEnd(9)} ball=${String(r.ball).padEnd(8)} ${fmtAge(new Date(Date.now() - r.silentH * 3.6e6).toISOString()).padStart(4)}  ${r.ref} · ${(r.product || '').slice(0, 26)}${r.qty ? ' ' + r.qty : ''}${money}${sg}`);
+      console.log(`          → ${r.next}${px}`);
+    }
+    console.log(`\n# ${rows.length} deals · signals ${nSig} · actionable ${act} · waiting ${rows.filter((r) => r.tier === 'waiting').length} — ball-on-them + not overdue = WAITING, not your move.`);
+    return;
+  }
+
   if (a0 === 'sweep') {
     const days = parseInt(a1, 10) || 14;
     const refs = await births(days);

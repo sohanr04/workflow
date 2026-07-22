@@ -302,7 +302,9 @@ So when Winston drafts: buyer draft = as Sohan from spr@, CC Parker/Joyce/Kylie;
 factory draft = from spr@, CC team + the factory's own people. Include the CC
 line in every draft so Sohan can copy-paste it whole.
 
-**THE DRAFT PIPELINE (Sohan's rules, in order) — every counterparty draft:**
+**THE DRAFT PIPELINE — runs ONLY when Sohan says "draft it" (never auto-draft).**
+Before that, you surface the move and offer to draft; you do NOT write emails on
+your own. Once he gives the go, run these in order:
 1. **Compose** the body yourself (facts, numbers, the protocol's To/CC).
 2. **Rephrase**: `node ../../scripts/rephrase.js "<body>"` → use its output
    (codex restyles; a guard returns YOUR original if any number is lost or the

@@ -431,13 +431,18 @@ async function births(days) {
       let ball, since, next;
       const buyer = nameOf(S.who), sup = B.who || (link.name || 'supplier');
       const sellUnanswered = S.state !== 'none' && S.theirs > 0 && S.oursAfterPing === 0;
-      const buyWaiting = B.state === 'ball-them' && B.ours > 0;      // we asked, supplier owes us
+      // "Will send you today" from THEM = a PROMISE — the ball STAYS on them
+      // (they owe the promised thing); timestamps alone would flip it to us.
+      const PROMISE_RE = /\b(will\s+(send|check|get\s+back|revert|confirm|update|let\s+you\s+know)|let\s+me\s+check|checking\s+with|i'?ll\s+(send|check|confirm|revert|get\s+back))\b/i;
+      const bPromise = B.state === 'ball-us' && B.last && PROMISE_RE.test(B.last.text || '');
+      const sPromise = S.state === 'ball-us' && S.last && PROMISE_RE.test(S.last.text || '');
+      const buyWaiting = (B.state === 'ball-them' && B.ours > 0) || bPromise;
       const havePrice = !!((B.cls && B.cls.confirmed) || link.price || ov.buy); // a CONFIRMED cost to quote with
-      if (B.state === 'ball-us') { ball = 'us'; since = B.last.ts; next = `ANSWER ${sup} — they replied, we owe`; }
-      else if (buyWaiting) { ball = 'supplier'; since = B.last.ts; next = `waiting on ${sup}${sellUnanswered ? ` — ${buyer} waits on this` : ''}`; }
+      if (B.state === 'ball-us' && !bPromise) { ball = 'us'; since = B.last.ts; next = `ANSWER ${sup} — they replied, we owe`; }
+      else if (buyWaiting) { ball = 'supplier'; since = B.last.ts; next = bPromise ? `${sup} promised ("will send") — hold them to it` : `waiting on ${sup}${sellUnanswered ? ` — ${buyer} waits on this` : ''}`; }
       else if (sellUnanswered) { ball = 'us'; since = S.lastTheirs.ts; next = havePrice ? `REPLY ${buyer} — pinged, unanswered` : `SOURCE a cost, then quote ${buyer} — pinged, unanswered`; }
-      else if (S.state === 'ball-us') { ball = 'us'; since = S.last.ts; next = `MOVE on ${buyer}`; }
-      else if (S.state === 'ball-them') { ball = 'buyer'; since = S.last.ts; next = `waiting on ${buyer}`; }
+      else if (S.state === 'ball-us' && !sPromise) { ball = 'us'; since = S.last.ts; next = `MOVE on ${buyer}`; }
+      else if (S.state === 'ball-them' || sPromise) { ball = 'buyer'; since = S.last.ts; next = sPromise ? `${buyer} promised ("will revert") — hold them to it` : `waiting on ${buyer}`; }
       else { ball = 'us'; since = (d.msgs[d.msgs.length - 1] || {}).ts; next = 'review thread'; }
       const silentH = since ? (Date.now() - new Date(since).getTime()) / 3.6e6 : 0;
       // tier from LIVE silence, canonical thresholds (lifecycle.js — one source)

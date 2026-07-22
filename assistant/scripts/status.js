@@ -28,6 +28,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { BOXES, getToken, graph } = require('./graph');
 const { retryFetch } = require('./_net');
+const { classify, refMatches, fmtP } = require('./prices');
 
 // ── who is who ───────────────────────────────────────────────────────────────
 const US_DOMAINS = ['grandempirehk.com', 'district-stock.com'];
@@ -103,9 +104,15 @@ async function readDeal(ref, tok, link = {}) {
   }
   // de-dupe (same message can appear via CC in two boxes) by date+subject
   const seen = new Set();
+  const REFTOK = /\b(?:DIS|GBT|SP|KG)[- ]?\d[\d-]*[A-Z]*/i;
   const msgs = rows.filter((m) => {
     const k = `${(m.receivedDateTime || '').slice(0, 16)}|${(m.subject || '').slice(0, 60)}|${m.from?.emailAddress?.address || ''}`;
-    if (seen.has(k)) return false; seen.add(k); return true;
+    if (seen.has(k)) return false; seen.add(k);
+    // exact-ref boundary: a subject carrying a DIFFERENT ref (DIS-26-33344 when we
+    // asked for DIS-26-3334) poisons the deal with a neighbour's messages — drop it.
+    const hay = `${m.subject || ''} ${m.bodyPreview || ''}`;
+    if (REFTOK.test(m.subject || '') && !terms.some((t) => refMatches(hay, t))) return false;
+    return true;
   }).sort((a, b) => (a.receivedDateTime || '').localeCompare(b.receivedDateTime || ''));
 
   const sell = [], buy = [];
@@ -128,6 +135,7 @@ async function readDeal(ref, tok, link = {}) {
     side.push({
       ts: m.receivedDateTime, from, us, counterparty, id: m.id, mb: m.mb, box: m.box,
       subject: m.subject || '', preview: (m.bodyPreview || '').replace(/\s+/g, ' ').slice(0, 200),
+      text, // subject + preview, for the confirmed-vs-ask price classifier
     });
   }
   return { msgs, sell, buy };
@@ -150,6 +158,7 @@ function sideState(list) {
     lastTheirs: theirs[theirs.length - 1] || null,
     who: (theirs[theirs.length - 1] || theirs[0] || last).counterparty || (theirs[0] && theirs[0].from) || '',
     lastPrice: lastPrice ? { vals: lastPrice.p, when: day(lastPrice.m.ts), from: lastPrice.m.us ? 'us' : 'them' } : null,
+    cls: classify(list), // {confirmed: THEIR number, ourAsk: ours + pending} — Sohan's model
   };
 }
 
@@ -191,7 +200,10 @@ function card(ref, d, link = {}) {
     const buyer = (S.who || '?').replace(/\s+is interested.*/i, '').replace(/^[^A-ZÀ-ÿ]*/, '');
     if (S.theirs > 0 && S.oursAfterPing === 0) out.push(`SELL: ❌ NOT REPLIED — ${buyer} pinged ${day(S.lastTheirs.ts)} (${fmtAge(S.lastTheirs.ts)} ago), no reply from us since`);
     else out.push(`SELL: ✅ working it — last move ${day(S.last.ts)} (${fmtAge(S.last.ts)} ago) by ${S.last.us ? 'US' : buyer} → ball = ${S.state === 'ball-us' ? 'US' : 'THEM'}`);
-    if (S.lastPrice) out.push(`      last price seen: ${S.lastPrice.vals.join(' ')} (${S.lastPrice.from}, ${S.lastPrice.when})`);
+    const sc = S.cls || {};
+    if (sc.confirmed) out.push(`      buyer's number: ${fmtP(sc.confirmed)}${sc.confirmed.viaAgreedAsk ? ' (AGREED to our ask' : ' (their price'}, ${day(sc.confirmed.when)})`);
+    else out.push(`      buyer's number: none given — open`);
+    if (sc.ourAsk) out.push(`      our ask: ${fmtP(sc.ourAsk)} (${day(sc.ourAsk.when)})${sc.ourAsk.pending ? ' — PENDING, no reply' : ''}`);
     out.push(`      last msg: "${S.last.preview.slice(0, 110)}"`);
   }
   // BUY side — the hinge is negotiation
@@ -201,8 +213,13 @@ function card(ref, d, link = {}) {
     else out.push(`BUY:  no factory contact for this ref — no negotiation, no price on record`);
   } else {
     const sup = B.who || '?';
-    if (B.ours === 0) out.push(`BUY:  offer only from ${sup} — no negotiation started${B.lastPrice ? `; their list price: ${B.lastPrice.vals.join(' ')} (${B.lastPrice.when})` : '; no price found'}`);
-    else out.push(`BUY:  negotiating with ${sup} — last move ${day(B.last.ts)} (${fmtAge(B.last.ts)}) by ${B.last.us ? 'US' : 'them'} → ball = ${B.state === 'ball-us' ? 'US' : 'them'}${B.lastPrice ? `; most recent price: ${B.lastPrice.vals.join(' ')} (${B.lastPrice.from}, ${B.lastPrice.when})` : ''}`);
+    if (B.ours === 0) out.push(`BUY:  offer only from ${sup} — no negotiation started`);
+    else out.push(`BUY:  negotiating with ${sup} — last move ${day(B.last.ts)} (${fmtAge(B.last.ts)}) by ${B.last.us ? 'US' : 'them'} → ball = ${B.state === 'ball-us' ? 'US' : 'them'}`);
+    const bc = B.cls || {};
+    if (bc.confirmed) out.push(`      confirmed cost: ${fmtP(bc.confirmed)}${bc.confirmed.viaAgreedAsk ? ' (AGREED to our ask' : ' (their offer'}, ${day(bc.confirmed.when)})`);
+    else if (link.price) out.push(`      confirmed cost: $${String(link.price).replace(/[^0-9.]/g, '')} (their list, relay record)`);
+    else out.push(`      confirmed cost: NONE — source it first`);
+    if (bc.ourAsk) out.push(`      our ask: ${fmtP(bc.ourAsk)} (${day(bc.ourAsk.when)})${bc.ourAsk.pending ? ' — PENDING, no reply' : ''}`);
     if (B.state !== 'none') out.push(`      last msg: "${B.last.preview.slice(0, 110)}"`);
   }
   // kill tripwires — the words override the timestamps; Winston must verify
@@ -415,7 +432,7 @@ async function births(days) {
       const buyer = nameOf(S.who), sup = B.who || (link.name || 'supplier');
       const sellUnanswered = S.state !== 'none' && S.theirs > 0 && S.oursAfterPing === 0;
       const buyWaiting = B.state === 'ball-them' && B.ours > 0;      // we asked, supplier owes us
-      const havePrice = !!(B.lastPrice || link.price || ov.buy);     // a cost to quote with
+      const havePrice = !!((B.cls && B.cls.confirmed) || link.price || ov.buy); // a CONFIRMED cost to quote with
       if (B.state === 'ball-us') { ball = 'us'; since = B.last.ts; next = `ANSWER ${sup} — they replied, we owe`; }
       else if (buyWaiting) { ball = 'supplier'; since = B.last.ts; next = `waiting on ${sup}${sellUnanswered ? ` — ${buyer} waits on this` : ''}`; }
       else if (sellUnanswered) { ball = 'us'; since = S.lastTheirs.ts; next = havePrice ? `REPLY ${buyer} — pinged, unanswered` : `SOURCE a cost, then quote ${buyer} — pinged, unanswered`; }
@@ -429,16 +446,21 @@ async function births(days) {
       else { const t = ball === 'supplier' ? LC.WAIT_SUP_H : LC.WAIT_CUST_H; tier = silentH >= LC.DORMANT_MIN_H ? 'dormant' : silentH >= LC.COLD_MIN_H ? 'cold' : (silentH <= t ? 'waiting' : 'chase_due'); }
       // waiting-but-overdue → the move is a chase on the SAME thread
       if (tier === 'chase_due') next = `CHASE ${ball === 'supplier' ? sup : buyer} — silent ${fmtAge(since)} on our last`;
-      const buyP = B.lastPrice ? B.lastPrice.vals[0] : (link.price ? ('$' + String(link.price).replace(/[^0-9.]/g, '')) : (ov.buy ? '$' + ov.buy : null));
-      const sellP = (S.lastPrice && S.lastPrice.from === 'them') ? S.lastPrice.vals[0] : (ov.sell ? '$' + ov.sell : null);
-      const b = parseFloat((buyP || '').replace(/[^0-9.]/g, '')), s = parseFloat((sellP || '').replace(/[^0-9.]/g, '')), q = parseFloat(ov.qty || '');
-      // only show a spread we can believe: both legs present, distinct, positive.
-      // identical/inverted = the price parser grabbed the wrong number → hide it,
-      // don't surface fake precision (buy/sell prices still shown raw for the eye).
-      const spread = (b && s && q && s > b) ? Math.round((s - b) * q) : null;
+      // CONFIRMED numbers only (Sohan's model: their number, never our unanswered ask)
+      const bc = (B.cls && B.cls.confirmed) || null, scf = (S.cls && S.cls.confirmed) || null;
+      const buyP = bc ? fmtP(bc) : (link.price ? ('$' + String(link.price).replace(/[^0-9.]/g, '')) : (ov.buy ? '$' + ov.buy : null));
+      const sellP = scf ? fmtP(scf) : (ov.sell ? '$' + ov.sell : null);
+      const askP = (S.cls && S.cls.ourAsk && S.cls.ourAsk.pending) ? fmtP(S.cls.ourAsk) : null;
+      // spread only when both legs are confirmed, same currency, and positive —
+      // never across R/$ (FX parked), never off a pending ask, no fake precision.
+      const b = bc ? bc.val : parseFloat(ov.buy || '') || null;
+      const s = scf ? scf.val : null;
+      const sameCur = bc && scf ? (bc.cur === scf.cur || bc.cur === '?' || scf.cur === '?') : true;
+      const q = parseFloat(ov.qty || '');
+      const spread = (b && s && q && sameCur && s > b) ? Math.round((s - b) * q) : null;
       // write the derived state back as a reader-down FALLBACK only (display is always live)
       const dd = book.deals[ref]; if (dd) { dd.ball = ball === 'buyer' ? 'buyer' : ball; dd.since = since; dd.derived_at = new Date().toISOString(); }
-      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, spread, product: ov.product || '', qty: ov.qty || '' };
+      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, product: ov.product || '', qty: ov.qty || '' };
     })).filter(Boolean);
     try { fs.writeFileSync(bookFile, JSON.stringify(book, null, 2)); } catch { /* cache best-effort */ }
     // signals first, then canonical tier order, then most-overdue
@@ -450,7 +472,7 @@ async function births(days) {
     for (const r of rows) {
       const tag = (LC.LC_TAG[r.tier] || r.tier);
       const money = r.spread ? ` ($${r.spread.toLocaleString()})` : '';
-      const px = (r.buyP || r.sellP) ? `  [buy ${r.buyP || '?'} · sell ${r.sellP || '?'}]` : '';
+      const px = (r.buyP || r.sellP || r.askP) ? `  [cost ${r.buyP || 'none'} · buyer ${r.sellP || 'open'}${r.askP ? ' · our ask ' + r.askP + ' pending' : ''}]` : '';
       const sg = r.sig ? `  ⚠️${r.sig.kind.toUpperCase()}:"${(r.sig.phrase || '').slice(0, 24)}"` : '';
       console.log(`${tag.padEnd(9)} ball=${String(r.ball).padEnd(8)} ${fmtAge(new Date(Date.now() - r.silentH * 3.6e6).toISOString()).padStart(4)}  ${r.ref} · ${(r.product || '').slice(0, 26)}${r.qty ? ' ' + r.qty : ''}${money}${sg}`);
       console.log(`          → ${r.next}${px}`);

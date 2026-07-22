@@ -147,6 +147,21 @@ function sideState(list) {
 // but a deterministic tripwire so a "sorry, sold" can never hide inside a
 // timestamps-only card. Checked on the counterparty's last 2 messages per leg.
 const KILL_RE = /(sold ?out|already sold|is sold|been sold|stock (is )?gone|no (more )?stock|out of stock|please drop|kindly drop|cancell?ed|cannot supply|not available( any ?more)?|withdrawn|pass on this)/i;
+
+// READING WRITES — decisive state-change language in a message BODY. When the
+// read-pass hits one in a THEM message, it writes a sticky book signal so the
+// state change can never be forgotten (the Militia scar). accept = ADVANCE to
+// order; drop = candidate for dead (needs Sohan/Winston to confirm — never
+// auto-closed). Precise on purpose: a false positive costs a re-read, a miss
+// costs a deal.
+const ACCEPT_RE = /\b(we(?:'?ll| will| can)? (?:accept|take|confirm)|accepted?(?: the| this)?(?: order| offer)?|confirm(?:ed|ing)? the order|place (?:the |an )?order|go ahead(?: with)?|proceed with|please (?:proceed|arrange the|go ahead)|raise the (?:pi|proforma|order)|deposit (?:paid|sent|done|received)|po attached|purchase order|move forward with|want to (?:move forward|order))\b/i;
+const DROP_RE = /\b(reject(?:ed)?|declin(?:e|ed|ing)|not interested|we'?ll pass|pass on (?:this|it)|won'?t (?:take|proceed|work)|can'?t use|no longer (?:need|want|interested)|cancel(?:led)? (?:the )?order|(?:please )?drop (?:this|it)|not (?:going|moving) (?:ahead|forward))\b/i;
+function readSignal(text) {
+  const t = String(text || '');
+  const a = t.match(ACCEPT_RE); if (a) return { kind: 'accept', phrase: a[0] };
+  const d = t.match(DROP_RE) || t.match(KILL_RE); if (d) return { kind: 'drop', phrase: d[0] };
+  return null;
+}
 function killFlag(list) {
   const theirs = list.filter((m) => !m.us).slice(-2);
   for (const m of theirs) {
@@ -278,6 +293,21 @@ async function births(days) {
       console.log(`═══ ${m.ref} [${m.side.toUpperCase()}] ${day(m.ts)} · ${m.us ? 'US' : 'THEM'} · ${m.from}`);
       console.log(`    ${m.subject}`);
       console.log(body.split('\n').map((l) => '    ' + l).join('\n') + '\n');
+      // READING WRITES: a decisive accept/drop from THE COUNTERPARTY becomes a
+      // sticky book signal — persisted so the next patrol/brief can't forget it
+      // (the Militia scar). Only on the real patrol pass (--mark), only on THEIR
+      // messages, checking subject + full body. Never auto-closes.
+      if (mark && !m.us) {
+        const sig = readSignal(`${m.subject} ${body}`);
+        if (sig) {
+          try {
+            execFileSync('node', [path.join(__dirname, 'book.js'), 'signal', m.ref,
+              '--kind', sig.kind, '--phrase', sig.phrase.slice(0, 60),
+              '--when', m.ts || new Date().toISOString(), '--from', (m.from || '').split('@')[0]],
+              { cwd: process.cwd(), stdio: 'inherit' });
+          } catch (e) { console.log(`    (signal write failed: ${(e.message || '').slice(0, 70)})`); }
+        }
+      }
       if (mark) seen[m.id] = m.ts || new Date().toISOString();
     }
     if (mark) { fs.mkdirSync(path.dirname(seenFile), { recursive: true }); fs.writeFileSync(seenFile, JSON.stringify(seen)); console.log(`# marked ${batch.length} read · ${queue.length - batch.length} remaining`); }

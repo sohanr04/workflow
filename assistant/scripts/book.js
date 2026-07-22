@@ -28,6 +28,15 @@
  *   book.js stats                 # health census
  *   book.js close <ref> --outcome won|lost --reason "gap wouldn't close"
  *   book.js sheet [path]          # export the book → Excel (default memory/GE-Deals.xlsx)
+ *
+ * READING WRITES (the Militia-scar fix):
+ *   book.js signal  <ref> --kind accept|drop --phrase "..." --from Joyce --when 2026-07-21
+ *                                 # a decisive state-change READ in a body, made STICKY.
+ *                                 # Persists until resolved so a patrol/brief can't forget it.
+ *                                 # Never auto-closes; auto-books an unbooked ref (confirmed
+ *                                 # order that fell out of the book gets tracked on read).
+ *   book.js signals               # the "YOUR MOVE" queue — every unresolved state-change
+ *   book.js resolve <ref>         # signal handled (acted on / Sohan decided) — clears the flag
  */
 
 const fs = require('fs');
@@ -78,10 +87,17 @@ function applyFields(d, args) {
   const since = flag(args, 'since'); if (since) d.since = tsOf(since);
 }
 
+// an unresolved signal is a state-change READ but not yet acted on — it must be
+// impossible to miss, so it rides on every line until resolved.
+function sigTag(d) {
+  if (!d.signal || d.signal.resolved) return '';
+  const k = d.signal.kind === 'accept' ? '🟢ACCEPT' : '🔴DROP';
+  return `  ⚠️${k}:"${(d.signal.phrase || '').slice(0, 30)}"`;
+}
 function line(ref, d) {
   const lc = lifecycle(d);
   const sp = spread(d);
-  return `${(TAG[lc] || lc).padEnd(9)} ${(d.stage || '?').padEnd(11)} ball=${(d.ball || '?').padEnd(9)} ${fmtH(silentH(d)).padStart(4)}  ${ref} · ${(d.product || '').slice(0, 34)}${d.qty ? ' · ' + d.qty : ''}${sp ? `  ($${sp.toLocaleString()})` : ''}${d.next ? `  → ${d.next}` : ''}`;
+  return `${(TAG[lc] || lc).padEnd(9)} ${(d.stage || '?').padEnd(11)} ball=${(d.ball || '?').padEnd(9)} ${fmtH(silentH(d)).padStart(4)}  ${ref} · ${(d.product || '').slice(0, 34)}${d.qty ? ' · ' + d.qty : ''}${sp ? `  ($${sp.toLocaleString()})` : ''}${d.next ? `  → ${d.next}` : ''}${sigTag(d)}`;
 }
 
 async function sheet(outArg) {
@@ -141,12 +157,55 @@ if (cmd === 'add') {
 } else if (cmd === 'close') {
   const b = load(); const d = b.deals[ref]; if (!d) die('no deal ' + ref);
   d.closed = true; d.outcome = flag(args.slice(1), 'outcome') || 'lost';
+  if (d.signal && !d.signal.resolved) { d.signal.resolved = true; d.signal.resolved_at = now(); } // closing actions the signal
   (d.history = d.history || []).push({ ts: now(), text: `closed ${d.outcome}: ${flag(args.slice(1), 'reason') || ''}` });
   save(b); console.log(`closed ${ref} (${d.outcome}).`);
+} else if (cmd === 'signal') {
+  // READING WRITES: a decisive state-change (accept / drop) read in a message
+  // body, made STICKY so the next patrol or morning brief can never forget it.
+  // This is the fix for the Militia scar — Winston notified once, then forgot,
+  // because reading a body wrote nothing. A signal persists until `resolve`d.
+  // It NEVER auto-closes (Sohan's floor: only `close` on an explicit drop) — it
+  // flags "your move". Auto-creates the deal if unbooked, so a confirmed order
+  // that was never in the book gets booked the instant it's read.
+  if (!ref) die('usage: signal <ref> --kind accept|drop --phrase "..." [--when date] [--from who]');
+  const kind = flag(args.slice(1), 'kind');
+  if (!['accept', 'drop'].includes(kind)) die('kind must be accept|drop');
+  const b = load();
+  const existed = !!b.deals[ref];
+  const d = b.deals[ref] || { opened_at: now(), history: [] };
+  const sig = { kind, phrase: flag(args.slice(1), 'phrase') || '', when: tsOf(flag(args.slice(1), 'when')) || now(), from: flag(args.slice(1), 'from') || '', ts: now(), resolved: false };
+  // idempotent: re-reading the same message on the next patrol must not churn
+  if (d.signal && !d.signal.resolved && d.signal.kind === kind && d.signal.phrase === sig.phrase) {
+    console.log(`signal unchanged on ${ref} (${kind})`); process.exit(0);
+  }
+  d.signal = sig;
+  if (kind === 'accept' && d.stage !== 'order') d.stage = 'order'; // an accept ADVANCES the deal (not a close)
+  (d.history = d.history || []).push({ ts: now(), text: `signal:${kind} "${sig.phrase}"${sig.from ? ' from ' + sig.from : ''}` });
+  if (!existed) { d.ball = 'us'; d.since = now(); } // a fresh signal-born deal: we owe the next move
+  b.deals[ref] = d; save(b);
+  console.log(`⚠️ SIGNAL ${kind.toUpperCase()} on ${ref}${existed ? '' : ' (auto-booked)'}${sig.from ? ' from ' + sig.from : ''}: "${sig.phrase}" — YOUR MOVE (persisted, unresolved)`);
+} else if (cmd === 'resolve') {
+  const b = load(); const d = b.deals[ref]; if (!d) die('no deal ' + ref);
+  if (!d.signal || d.signal.resolved) die('no unresolved signal on ' + ref);
+  const k = d.signal.kind; d.signal.resolved = true; d.signal.resolved_at = now();
+  (d.history = d.history || []).push({ ts: now(), text: `signal resolved (${k})` });
+  save(b); console.log(`resolved ${k} signal on ${ref}.`);
+} else if (cmd === 'signals') {
+  const b = load();
+  const rows = Object.entries(b.deals).filter(([, d]) => d.signal && !d.signal.resolved && !d.closed)
+    .sort((a, x) => (a[1].signal.when || '').localeCompare(x[1].signal.when || ''));
+  console.log(`# SIGNALS — ${rows.length} unresolved state-changes (YOUR MOVE — read, not yet acted on)`);
+  for (const [ref, d] of rows) {
+    const k = d.signal.kind === 'accept' ? '🟢ACCEPT' : '🔴DROP ';
+    console.log(`${k} ${ref} · ${(d.product || '?').slice(0, 30)}${d.qty ? ' ' + d.qty : ''} · ${d.signal.from || '?'} ${(d.signal.when || '').slice(0, 10)}: "${d.signal.phrase}"`);
+  }
 } else if (cmd === 'today') {
   const b = load();
-  const rows = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) })).filter((r) => ACTION.has(r.lc)).sort((a, x) => ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
-  console.log(`# WINSTON'S BOOK — ${rows.length} actionable (his own tracking, fresh first)`);
+  // actionable = a hot/aging/chase tier OR an unresolved signal (your move).
+  const unresolved = (d) => d.signal && !d.signal.resolved && !d.closed;
+  const rows = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) })).filter((r) => ACTION.has(r.lc) || unresolved(r.d)).sort((a, x) => (unresolved(x.d) - unresolved(a.d)) || ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
+  console.log(`# WINSTON'S BOOK — ${rows.length} actionable (signals first, then fresh)`);
   for (const { ref, d } of rows) console.log(line(ref, d));
 } else if (cmd === 'list') {
   const b = load(); const f = ref;
@@ -166,5 +225,5 @@ if (cmd === 'add') {
 } else if (cmd === 'sheet') {
   sheet(ref).catch((e) => die(e.message));
 } else {
-  console.log("book.js — Winston's own deal book. commands: add | set | note | get | today | list [hot|chase|cold] | stats | close | sheet");
+  console.log("book.js — Winston's own deal book. commands: add | set | note | get | today | list [hot|chase|cold] | signal | signals | resolve | stats | close | sheet");
 }

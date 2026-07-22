@@ -41,15 +41,34 @@ function extractPrices(text) {
   while ((m = perpc.exec(t))) push(m[1], '?', m[0], m.index);
   const bare = /\b(?:offer(?:ed)?|target|best(?:\s+is)?|pay|price(?:\s+is)?|at|take\s+all\s+for)\D{0,10}?(\d{1,3}\.\d{1,2})\b(?!\s*%)/gi; // "offered 45.00"
   while ((m = bare.exec(t))) push(m[1], '?', m[0], m.index);
-  // de-dupe same position (a "$1.50/pc" hits both usd and perpc)
-  const seen = new Set();
-  return out.sort((a, b) => a.idx - b.idx).filter((p) => {
-    const k = Math.round(p.idx / 4) + '|' + p.val;
-    if (seen.has(k)) return false; seen.add(k); return true;
-  });
+  // de-dupe near-position same-value captures ("$1.50/pc" hits usd AND perpc;
+  // "best is $2.50" hits usd AND the keyword-gated bare) — keep the known currency
+  const merged = [];
+  for (const p of out.sort((a, b) => a.idx - b.idx)) {
+    const dup = merged.find((q) => q.val === p.val && Math.abs(q.idx - p.idx) < 30);
+    if (!dup) { merged.push(p); continue; }
+    if (dup.cur === '?' && p.cur !== '?') { dup.cur = p.cur; dup.raw = p.raw; }
+  }
+  return merged;
 }
 
 const AGREE_RE = /\b(ok(?:ay)?|yes|confirm(?:ed)?|agree(?:d)?|deal|accept(?:ed)?|fine|works|go ahead)\b/i;
+
+// a counterparty message can carry TWO prices — theirs and ours quoted back
+// ("Best is $2.50 that I want to pay … your offer $2.80"). THEIR number is the
+// one anchored to commitment words; without an anchor, fall back to the last.
+const INTENT_RE = /\b(best|pay|target|take\s?all|i can(?:\s+do)?|we can(?:\s+do)?|want(?:\s+to\s+pay)?|my price|our price|for all)\b/gi;
+function pickTheirs(text, ps) {
+  if (!ps.length) return null;
+  if (ps.length === 1) return ps[0];
+  const kws = []; let m; INTENT_RE.lastIndex = 0;
+  while ((m = INTENT_RE.exec(text))) kws.push(m.index);
+  if (!kws.length) return ps[ps.length - 1];
+  return ps.reduce((best, p) => {
+    const d = Math.min(...kws.map((k) => Math.abs(p.idx - k)));
+    return !best || d < best.d ? { p, d } : best;
+  }, null).p;
+}
 
 /**
  * classify one side's messages (asc by ts; each: {us, ts, text, counterparty?})
@@ -64,8 +83,9 @@ function classify(msgs) {
     if (m.us) {
       if (last) ourAsk = { val: last.val, cur: last.cur, when: m.ts, pending: true };
     } else {
-      if (last) {
-        confirmed = { val: last.val, cur: last.cur, when: m.ts, by: m.counterparty || '' };
+      const theirs = pickTheirs(text, ps);
+      if (theirs) {
+        confirmed = { val: theirs.val, cur: theirs.cur, when: m.ts, by: m.counterparty || '' };
         if (ourAsk) ourAsk.pending = false; // they moved past our ask with their own number
       } else if (ourAsk && ourAsk.pending && AGREE_RE.test(text)) {
         // they agreed to OUR ask without restating a number → ask becomes confirmed
@@ -127,6 +147,10 @@ if (require.main === module) {
   // vest: Lecia "Best is $ 2.50 that I want to pay" → confirmed 2.50
   r = classify([{ us: false, ts: '1', text: 'Best is $ 2.50 that I want to pay – what is the price? Can take all', counterparty: 'Lecia' }]);
   T('vest buyer firm', [r.confirmed.val, r.confirmed.cur], [2.5, 'USD']);
+
+  // two prices in THEIR message — theirs is the intent-anchored one, not our quoted-back $2.80
+  r = classify([{ us: false, ts: '1', text: 'Best is $ 2.50 that I want to pay – your offer says $2.80, what is the price?', counterparty: 'Lecia' }]);
+  T('intent-anchored pick', r.confirmed.val, 2.5);
 
   // R92 Parker lock (rand)
   T('R92 extract', extractPrices('Parker confirmed R92 per pc')[0].cur, 'ZAR');

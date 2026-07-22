@@ -202,17 +202,31 @@ if (cmd === 'add') {
   }
 } else if (cmd === 'today') {
   const b = load();
-  // actionable = a hot/aging/chase tier OR an unresolved signal (your move).
   const unresolved = (d) => !!(d.signal && !d.signal.resolved && !d.closed);
-  const rows = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) })).filter((r) => ACTION.has(r.lc) || unresolved(r.d)).sort((a, x) => (unresolved(x.d) - unresolved(a.d)) || ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
-  console.log(`# WINSTON'S BOOK — ${rows.length} actionable (signals first, then fresh)`);
-  for (const { ref, d } of rows) console.log(line(ref, d));
+  // VIABILITY: both legs + qty known and we're UNDERWATER (negative spread) →
+  // chasing the BUYER is pointless (we're below their number). It's a supplier
+  // squeeze or a park, NOT a chase. Keep it off the active list so Winston stops
+  // surfacing dead-on-price deals for Sohan to veto ("use ur brain"). A signal
+  // overrides (an accept/drop still needs action regardless of price).
+  const underwater = (d) => { const s = spread(d); return s != null && s < 0 && !unresolved(d); };
+  const all = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) }));
+  const chase = all.filter((r) => (ACTION.has(r.lc) || unresolved(r.d)) && !underwater(r.d))
+    .sort((a, x) => (unresolved(x.d) - unresolved(a.d)) || ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
+  const parked = all.filter((r) => underwater(r.d) && (ACTION.has(r.lc) || r.lc === 'waiting'))
+    .sort((a, x) => spread(a.d) - spread(x.d)); // most underwater first
+  console.log(`# WINSTON'S BOOK — ${chase.length} to chase (signals first)${parked.length ? ` · ${parked.length} parked on price` : ''}`);
+  for (const { ref, d } of chase) console.log(line(ref, d));
+  if (parked.length) {
+    console.log(`\n# 🅿️ PARKED — underwater at current prices → SUPPLIER squeeze or dead, NOT a buyer chase:`);
+    for (const { ref, d } of parked) console.log(line(ref, d) + `  [$${spread(d).toLocaleString()} — need buy ≤ ${d.sell} to clear]`);
+  }
 } else if (cmd === 'list') {
   const b = load(); const f = ref;
   let rows = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) }));
   if (f === 'hot') rows = rows.filter((r) => ['hot', 'aging'].includes(r.lc));
   else if (f === 'chase') rows = rows.filter((r) => r.lc === 'chase_due');
   else if (f === 'cold') rows = rows.filter((r) => ['cold', 'dormant'].includes(r.lc));
+  else if (f === 'parked') rows = rows.filter((r) => { const s = spread(r.d); return s != null && s < 0 && !r.d.closed; });
   else if (f && f !== 'all') rows = rows.filter((r) => r.lc === f);
   rows.sort((a, x) => ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
   console.log(`# book${f ? ' (' + f + ')' : ''} — ${rows.length}`);

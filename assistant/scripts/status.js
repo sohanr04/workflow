@@ -351,10 +351,16 @@ async function births(days) {
     let book = {}; try { book = JSON.parse(fs.readFileSync(bookFile, 'utf8')); } catch { die('no book at ' + bookFile); }
     const open = Object.entries(book.deals || {}).filter(([, d]) => !d.closed).map(([r]) => r);
     console.log(`# REFRESH — ${open.length} open deals in the book\n`);
-    let unanswered = 0, ballUs = 0, ballThem = 0;
+    let unanswered = 0, ballUs = 0, ballThem = 0, unverified = 0;
     for (const ref of open) {
       const link = await supplierLink(ref);
-      const d = await readDeal(ref, tok, link);
+      // reader resilience: a single ETIMEDOUT to Graph must NOT crash the pass
+      // or silently pass off stale book state as current. Flag it UNVERIFIED and
+      // move on — the scar where a reader outage made Winston chase a deal Sohan
+      // had already handled (DIS-26-3868, 2026-07-22).
+      let d;
+      try { d = await readDeal(ref, tok, link); }
+      catch (e) { console.log(`═══ ${ref} — ⚠️ READER FAILED (${(e.message || '').slice(0, 44)}) — book state is STALE/UNVERIFIED, do not chase off it\n`); unverified++; continue; }
       if (!d.msgs.length) { console.log(`═══ ${ref} — no messages found (check the ref)\n`); continue; }
       const { text, S, B } = card(ref, d, link);
       console.log(text + '\n');
@@ -363,7 +369,7 @@ async function births(days) {
       else if (S.state === 'ball-them') ballThem++;
       toBook(ref, d, S, B, link);
     }
-    console.log(`# TOTALS: ${open.length} open · ❌ unanswered ${unanswered} · ball-US ${ballUs} · ball-them ${ballThem}`);
+    console.log(`# TOTALS: ${open.length} open · ❌ unanswered ${unanswered} · ball-US ${ballUs} · ball-them ${ballThem}${unverified ? ` · ⚠️ UNVERIFIED ${unverified} (reader timed out — stale, don't trust)` : ''}`);
     return;
   }
 

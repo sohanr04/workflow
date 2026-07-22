@@ -80,7 +80,13 @@ async function supplierLink(ref) {
   const pat = encodeURIComponent(`*${ref}*`);
   try {
     const os_ = await (await retryFetch(`${URL}/rest/v1/offer_sends?offer_subject=ilike.${pat}&select=supplier_price&limit=3`, { headers: H })).json();
-    link.price = (os_.find((r) => r.supplier_price) || {}).supplier_price || null;
+    const rawP = (os_.find((r) => r.supplier_price) || {}).supplier_price;
+    if (rawP != null) {
+      // relay stores split-lot prices mashed ("3.282.95" = mens 3.28 / kids 2.95)
+      const nums = String(rawP).match(/\d+(?:\.\d{1,2})?/g) || [];
+      link.price = nums.length ? nums.join('/') : null; // "3.28/2.95" — clean, split visible
+      link.priceNum = nums.length ? parseFloat(nums[0]) : null; // first for margin math
+    }
   } catch { /* best effort */ }
   try {
     const fc = await (await retryFetch(`${URL}/rest/v1/factory_checks?offer_subject=ilike.${pat}&select=supplier_style,supplier_name,supplier_email,target_price&order=created_at.desc&limit=5`, { headers: H })).json();
@@ -472,12 +478,12 @@ async function births(days) {
       if (tier === 'chase_due') next = `CHASE ${ball === 'supplier' ? sup : buyer} — silent ${fmtAge(since)} on our last`;
       // CONFIRMED numbers only (Sohan's model: their number, never our unanswered ask)
       const bc = (B.cls && B.cls.confirmed) || null, scf = (S.cls && S.cls.confirmed) || null;
-      const buyP = bc ? fmtP(bc) : (link.price ? ('$' + String(link.price).replace(/[^0-9.]/g, '')) : (ov.buy ? '$' + ov.buy : null));
+      const buyP = bc ? fmtP(bc) : (link.price ? ('$' + link.price + (/\//.test(link.price) ? ' split' : '')) : (ov.buy ? '$' + ov.buy : null));
       const sellP = scf ? fmtP(scf) : (ov.sell ? '$' + ov.sell : null);
       const askP = (S.cls && S.cls.ourAsk && S.cls.ourAsk.pending) ? fmtP(S.cls.ourAsk) : null;
       // spread only when both legs are confirmed, same currency, and positive —
       // never across R/$ (FX parked), never off a pending ask, no fake precision.
-      const b = bc ? bc.val : parseFloat(ov.buy || '') || null;
+      const b = bc ? bc.val : (link.priceNum || parseFloat(ov.buy || '') || null);
       const s = scf ? scf.val : null;
       const sameCur = bc && scf ? (bc.cur === scf.cur || bc.cur === '?' || scf.cur === '?') : true;
       const q = parseFloat(ov.qty || '');

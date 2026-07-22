@@ -14,7 +14,7 @@ const HOT_MAX_H = 72;        // ball on us, they replied < 3d ago → act now
 const COLD_MIN_H = 336;      // 14d counterparty silence → likely dead
 const DORMANT_MIN_H = 720;   // 30d silence → dead backlog
 const WAIT_CUST_H = 48;      // healthy quiet on a buyer
-const WAIT_SUP_H = 24;       // healthy quiet on a supplier
+const WAIT_SUP_H = 48;       // healthy quiet on a supplier (Sohan's rule: 2-day window)
 
 // Honest silence = hours since the RELEVANT counterparty last spoke.
 // Ball on us → they spoke last, so top-level silent_hours IS honest.

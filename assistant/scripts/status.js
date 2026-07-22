@@ -55,6 +55,16 @@ const prices = (t) => (String(t).match(/(?:US?\$|USD\s?)\s?\d+(?:\.\d+)?|\$\s?\d
 
 function die(m) { console.error('status.js: ' + m); process.exit(1); }
 
+// bounded-concurrency map — keeps the live board fast without hammering Graph
+async function mapPool(items, n, fn) {
+  const out = new Array(items.length);
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) { const idx = i++; try { out[idx] = await fn(items[idx], idx); } catch { out[idx] = null; } }
+  }));
+  return out;
+}
+
 // ── the DIS → factory link, from the relay's own records ─────────────────────
 // offer_sends holds the supplier's ORIGINAL price for each DIS offer (the
 // "no negotiation → their current price is X" case); factory_checks holds the
@@ -390,12 +400,11 @@ async function births(days) {
     if (only) open = open.filter(([r]) => r.toUpperCase() === only);
     else if (limit) open = open.slice(0, limit);
     const nameOf = (s) => (s || '?').replace(/\s+is interested.*/i, '').replace(/^[^A-Za-zÀ-ÿ]*/, '').replace(/^(pieces|pcs|prs|pairs|the|for|units?)\s+/i, '').slice(0, 22);
-    const rows = [];
-    for (const [ref, ov] of open) {
+    const rows = (await mapPool(open, 6, async ([ref, ov]) => {
       const link = await supplierLink(ref);
       const d = await readDeal(ref, tok, link);
       const sig = ov.signal && !ov.signal.resolved ? ov.signal : null;
-      if (!d.msgs.length) { rows.push({ ref, ov, sig, tier: 'unread', ball: '?', silentH: 0, next: 'no thread found — check ref', line: true }); continue; }
+      if (!d.msgs.length) return { ref, ov, sig, tier: 'unread', ball: '?', silentH: 0, next: 'no thread found — check ref', line: true };
       const S = sideState(d.sell), B = sideState(d.buy);
       // LIVE ball derivation with the TWO-LEG BLOCKER rule. A buyer ping is only
       // OURS to answer if we can actually price it — i.e. the BUY leg is settled.
@@ -424,10 +433,10 @@ async function births(days) {
       const sellP = (S.lastPrice && S.lastPrice.from === 'them') ? S.lastPrice.vals[0] : (ov.sell ? '$' + ov.sell : null);
       const b = parseFloat((buyP || '').replace(/[^0-9.]/g, '')), s = parseFloat((sellP || '').replace(/[^0-9.]/g, '')), q = parseFloat(ov.qty || '');
       const spread = (b && s && q) ? Math.round((s - b) * q) : null;
-      rows.push({ ref, ov, sig, tier, ball, silentH, next, buyP, sellP, spread, product: ov.product || '', qty: ov.qty || '' });
       // write the derived state back as a reader-down FALLBACK only (display is always live)
       const dd = book.deals[ref]; if (dd) { dd.ball = ball === 'buyer' ? 'buyer' : ball; dd.since = since; dd.derived_at = new Date().toISOString(); }
-    }
+      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, spread, product: ov.product || '', qty: ov.qty || '' };
+    })).filter(Boolean);
     try { fs.writeFileSync(bookFile, JSON.stringify(book, null, 2)); } catch { /* cache best-effort */ }
     // signals first, then canonical tier order, then most-overdue
     const rank = (r) => (r.sig ? -1 : 0);

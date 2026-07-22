@@ -109,7 +109,9 @@ async function readDeal(ref, tok, link = {}) {
   // de-dupe (same message can appear via CC in two boxes) by date+subject
   const seen = new Set();
   const REFTOK = /\b(?:DIS|GBT|SP|KG)[- ]?\d[\d-]*[A-Z]*/i;
-  let supplierCode = link.style || null;
+  // clean the relay's supplier_style (often stored as "GBT26-3964MEN'S PADDED VEST")
+  // down to just the code; the extractor keeps only the same-core token.
+  let supplierCode = link.style ? supplierCodeIn(link.style, ref) : null;
   const msgs = rows.filter((m) => {
     const k = `${(m.receivedDateTime || '').slice(0, 16)}|${(m.subject || '').slice(0, 60)}|${m.from?.emailAddress?.address || ''}`;
     if (seen.has(k)) return false; seen.add(k);
@@ -219,12 +221,12 @@ function card(ref, d, link = {}) {
   // BUY side — the hinge is negotiation
   if (B.state === 'none') {
     // no factory thread — but the relay/core-match may still know the supplier code
-    const supCode = d.supplierCode || link.style;
+    const supCode = d.supplierCode;
     if (link.price || link.name || supCode) out.push(`BUY:  no negotiation started — supplier ${link.name || '?'}${supCode ? ` (${supCode})` : ''}${link.email ? ` · ${link.email}` : ''}, list price: ${link.price || 'none on record — source it'}`);
     else out.push(`BUY:  no factory contact for this ref — SOURCE the supplier code + price`);
   } else {
     const sup = B.who || '?';
-    const supCode = d.supplierCode || link.style;
+    const supCode = d.supplierCode;
     if (B.ours === 0) out.push(`BUY:  offer only from ${sup} — no negotiation started`);
     else out.push(`BUY:  negotiating with ${sup} — last move ${day(B.last.ts)} (${fmtAge(B.last.ts)}) by ${B.last.us ? 'US' : 'them'} → ball = ${B.state === 'ball-us' ? 'US' : 'them'}`);
     if (supCode || link.email) out.push(`      ↳ supplier thread: ${supCode || '?'}${link.email ? ` · ${link.email}` : (B.who && /@/.test(B.who) ? ` · ${B.who}` : '')} (negotiate here)`);
@@ -486,7 +488,7 @@ async function births(days) {
       else if (ball === 'us' && sellUnanswered && b && (!mg || mg.flag !== '⛔')) next = `QUOTE ${buyer} ~$${(Math.ceil(b * 120) / 100).toFixed(2)} (cost ${buyP} +20%)`;
       // write the derived state back as a reader-down FALLBACK only (display is always live)
       const dd = book.deals[ref]; if (dd) { dd.ball = ball === 'buyer' ? 'buyer' : ball; dd.since = since; dd.derived_at = new Date().toISOString(); }
-      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, mg, supCode: d.supplierCode || link.style || null, supEmail: link.email || (B.who && /@/.test(B.who) ? B.who : null), product: ov.product || '', qty: ov.qty || '' };
+      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, mg, supCode: d.supplierCode || null, supEmail: link.email || (B.who && /@/.test(B.who) ? B.who : null), product: ov.product || '', qty: ov.qty || '' };
     })).filter(Boolean);
     try { fs.writeFileSync(bookFile, JSON.stringify(book, null, 2)); } catch { /* cache best-effort */ }
     // signals first, then canonical tier order, then most-overdue

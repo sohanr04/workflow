@@ -203,7 +203,7 @@ if (cmd === 'add') {
 } else if (cmd === 'today') {
   const b = load();
   // actionable = a hot/aging/chase tier OR an unresolved signal (your move).
-  const unresolved = (d) => d.signal && !d.signal.resolved && !d.closed;
+  const unresolved = (d) => !!(d.signal && !d.signal.resolved && !d.closed);
   const rows = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) })).filter((r) => ACTION.has(r.lc) || unresolved(r.d)).sort((a, x) => (unresolved(x.d) - unresolved(a.d)) || ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
   console.log(`# WINSTON'S BOOK — ${rows.length} actionable (signals first, then fresh)`);
   for (const { ref, d } of rows) console.log(line(ref, d));

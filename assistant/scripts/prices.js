@@ -57,7 +57,7 @@ const AGREE_RE = /\b(ok(?:ay)?|yes|confirm(?:ed)?|agree(?:d)?|deal|accept(?:ed)?
 // a counterparty message can carry TWO prices — theirs and ours quoted back
 // ("Best is $2.50 that I want to pay … your offer $2.80"). THEIR number is the
 // one anchored to commitment words; without an anchor, fall back to the last.
-const INTENT_RE = /\b(best|pay|target|take\s?all|i can(?:\s+do)?|we can(?:\s+do)?|want(?:\s+to\s+pay)?|my price|our price|for all)\b/gi;
+const INTENT_RE = /\b(best|pay|target|take|i can(?:\s+do)?|we can(?:\s+do)?|want(?:\s+to\s+pay)?|my price|our price|for all)\b/gi;
 function pickTheirs(text, ps) {
   if (!ps.length) return null;
   if (ps.length === 1) return ps[0];
@@ -151,6 +151,10 @@ if (require.main === module) {
   // two prices in THEIR message — theirs is the intent-anchored one, not our quoted-back $2.80
   r = classify([{ us: false, ts: '1', text: 'Best is $ 2.50 that I want to pay – your offer says $2.80, what is the price?', counterparty: 'Lecia' }]);
   T('intent-anchored pick', r.confirmed.val, 2.5);
+
+  // hoody: her "CAN TAKE them all at $1.64" beats the forward footer's listed $2.50
+  r = classify([{ us: false, ts: '1', text: 'Lecia is interested. They said: "CAN TAKE them all at $ 1.64" Offer listed at $2.50 clear-all', counterparty: 'Lecia' }]);
+  T('take-anchored beats footer', r.confirmed.val, 1.64);
 
   // R92 Parker lock (rand)
   T('R92 extract', extractPrices('Parker confirmed R92 per pc')[0].cur, 'ZAR');

@@ -99,6 +99,15 @@ async function imagesFrom(box, msgId, tok) {
   return out;
 }
 
+// find the latest spr@ message carrying this ref — the thread to reply INTO.
+// Winston always knows the ref; he shouldn't have to dig out a raw message id.
+async function threadMsgForRef(ref, tok) {
+  const q = encodeURIComponent(`"${ref}"`);
+  const j = await gGet(`/users/${FROM_BOX}/messages?$search=${q}&$select=id,subject,receivedDateTime&$top=10`, tok);
+  const msgs = (j.value || []).sort((a, b) => (b.receivedDateTime || '').localeCompare(a.receivedDateTime || ''));
+  return msgs[0] ? msgs[0].id : null;
+}
+
 // find the DIS blast for a ref in districtstock@ Sent Items and return its photos
 // (the same source the relay re-attaches from).
 async function blastPhotos(ref, tok) {
@@ -113,9 +122,10 @@ async function blastPhotos(ref, tok) {
 
 (async () => {
   const args = process.argv.slice(2);
-  const replyTo = flag(args, 'reply-to');
+  let replyTo = flag(args, 'reply-to');
+  const replyRef = flag(args, 'reply-ref');
   let subject = args[0] && !args[0].startsWith('--') ? args[0] : undefined;
-  if (!subject && !replyTo) die('usage: draft.js "<subject>" | --reply-to <msgId> ... --to a@b --cc auto --body "..." [--photos DIS-REF]');
+  if (!subject && !replyTo && !replyRef) die('usage: draft.js "<subject>" | --reply-ref DIS-XXX | --reply-to <msgId> ... --to a@b --cc auto --body "..." [--photos DIS-REF]');
 
   const to = (flag(args, 'to') || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (!to.length) die('missing --to');
@@ -138,10 +148,19 @@ async function blastPhotos(ref, tok) {
   const html = body.split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
   const tok = await getToken();
 
+  // ── resolve --reply-ref → the spr@ thread message id (Winston passes the ref) ─
+  let refNote = '';
+  if (replyRef && !replyTo) {
+    try {
+      replyTo = await threadMsgForRef(replyRef.toUpperCase(), tok);
+      if (!replyTo) refNote = ` — ⚠️ no spr@ message found for ${replyRef} to thread onto; saved fresh`;
+    } catch (e) { refNote = ` — ⚠️ thread lookup failed (${e.message.slice(0, 50)})`; }
+  }
+
   // ── gather photos to re-attach (like the relay) ────────────────────────────
   let photos = [];
   let photoNote = '';
-  const photosRef = flag(args, 'photos');
+  const photosRef = flag(args, 'photos') || replyRef; // default to the reply ref
   if (photosRef) {
     try { const bp = await blastPhotos(photosRef.toUpperCase(), tok); photos = bp.photos; }
     catch (e) { photoNote = ` (photo lookup failed: ${e.message.slice(0, 60)})`; }
@@ -173,6 +192,7 @@ async function blastPhotos(ref, tok) {
     }
   }
   if (!draftId) {
+    if (!subject && replyRef) subject = `RE: ${replyRef}`; // sane fallback if the thread wasn't found
     if (!subject) die('--reply-to failed and no fallback subject given — pass "<subject>" as the first arg too');
     const fresh = await gPost(`/users/${FROM_BOX}/messages`, tok, {
       subject, body: { contentType: 'HTML', content: html },
@@ -194,7 +214,7 @@ async function blastPhotos(ref, tok) {
     } catch { /* skip a photo that fails to attach */ }
   }
 
-  console.log(`✓ DRAFT saved to ${FROM_BOX} → Drafts (not sent)${threadNote}`);
+  console.log(`✓ DRAFT saved to ${FROM_BOX} → Drafts (not sent)${threadNote}${refNote}`);
   console.log(`  ${threaded ? 'THREADED reply onto the buyer\'s message' : 'fresh message'}${threaded ? '' : ` · subject: ${subject}`}`);
   console.log(`  to: ${to.join(', ')}`);
   console.log(`  cc: ${cc.join(', ') || '(none)'}`);

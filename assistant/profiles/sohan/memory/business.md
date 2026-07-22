@@ -307,11 +307,17 @@ line in every draft so Sohan can copy-paste it whole.
 2. **Rephrase**: `node ../../scripts/rephrase.js "<body>"` → use its output
    (codex restyles; a guard returns YOUR original if any number is lost or the
    CLI is down — a warning line says so).
-3. **Save into Outlook**: `node ../../scripts/draft.js "RE: <the thread's
-   subject>" --to <counterparty> --cc auto --body "<final body>"` — it lands in
-   **spr@ Drafts** (drafts ONLY — the tool has no send capability; the identity
-   wall is enforced in code and refuses supplier+buyer mixes). `--cc auto` = the
-   team CC per protocol.
+3. **Save into Outlook**: `node ../../scripts/draft.js --reply-ref <REF> --to
+   <counterparty> --cc auto --body "<final body>"`. **Always use `--reply-ref
+   <REF>`** — it THREADS the draft onto the real conversation (a proper reply,
+   quoted history — not a fresh "RE:" that starts a new thread) AND re-attaches
+   the offer photos from the DIS blast, exactly like the relay, both derived from
+   the ref. It lands in **spr@ Drafts** (drafts ONLY — no send capability; the
+   identity wall refuses supplier+buyer mixes). `--cc auto` = the team CC per
+   protocol. (If there's genuinely no thread to reply into, the bare
+   `"RE: <subject>"` form still works; add `--photos <REF>` to attach anyway.)
+   The output line tells you: THREADED or fresh, and how many photos attached —
+   relay that so Sohan knows the draft is complete.
 4. **The nudge then says**: "draft's in your Outlook — open, review, send."
    Sohan's action drops to seconds. NEVER tell him to copy-paste a body when
    you could have saved it as a draft; only fall back to text-in-chat if

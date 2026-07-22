@@ -389,7 +389,7 @@ async function births(days) {
     let open = Object.entries(book.deals || {}).filter(([, d]) => !d.closed);
     if (only) open = open.filter(([r]) => r.toUpperCase() === only);
     else if (limit) open = open.slice(0, limit);
-    const nameOf = (s) => (s || '?').replace(/\s+is interested.*/i, '').replace(/^[^A-Za-zÀ-ÿ]*/, '').slice(0, 22);
+    const nameOf = (s) => (s || '?').replace(/\s+is interested.*/i, '').replace(/^[^A-Za-zÀ-ÿ]*/, '').replace(/^(pieces|pcs|prs|pairs|the|for|units?)\s+/i, '').slice(0, 22);
     const rows = [];
     for (const [ref, ov] of open) {
       const link = await supplierLink(ref);
@@ -397,13 +397,20 @@ async function births(days) {
       const sig = ov.signal && !ov.signal.resolved ? ov.signal : null;
       if (!d.msgs.length) { rows.push({ ref, ov, sig, tier: 'unread', ball: '?', silentH: 0, next: 'no thread found — check ref', line: true }); continue; }
       const S = sideState(d.sell), B = sideState(d.buy);
-      // LIVE ball derivation (the same rule the card uses) — read, not stored
+      // LIVE ball derivation with the TWO-LEG BLOCKER rule. A buyer ping is only
+      // OURS to answer if we can actually price it — i.e. the BUY leg is settled.
+      // If we're still waiting on the supplier, the buyer waits downstream and the
+      // real move is the supplier leg (this is what stops "reply Lecia" when the
+      // block is Cherry). Read live, never stored.
       let ball, since, next;
       const buyer = nameOf(S.who), sup = B.who || (link.name || 'supplier');
-      if (S.state !== 'none' && S.theirs > 0 && S.oursAfterPing === 0) { ball = 'us'; since = S.lastTheirs.ts; next = `REPLY ${buyer} — pinged, unanswered`; }
-      else if (B.state === 'ball-us') { ball = 'us'; since = B.last.ts; next = `ANSWER ${sup} — they replied, we owe`; }
+      const sellUnanswered = S.state !== 'none' && S.theirs > 0 && S.oursAfterPing === 0;
+      const buyWaiting = B.state === 'ball-them' && B.ours > 0;      // we asked, supplier owes us
+      const havePrice = !!(B.lastPrice || link.price || ov.buy);     // a cost to quote with
+      if (B.state === 'ball-us') { ball = 'us'; since = B.last.ts; next = `ANSWER ${sup} — they replied, we owe`; }
+      else if (buyWaiting) { ball = 'supplier'; since = B.last.ts; next = `waiting on ${sup}${sellUnanswered ? ` — ${buyer} waits on this` : ''}`; }
+      else if (sellUnanswered) { ball = 'us'; since = S.lastTheirs.ts; next = havePrice ? `REPLY ${buyer} — pinged, unanswered` : `SOURCE a cost, then quote ${buyer} — pinged, unanswered`; }
       else if (S.state === 'ball-us') { ball = 'us'; since = S.last.ts; next = `MOVE on ${buyer}`; }
-      else if (B.state === 'ball-them' && B.ours > 0) { ball = 'supplier'; since = B.last.ts; next = `waiting on ${sup}`; }
       else if (S.state === 'ball-them') { ball = 'buyer'; since = S.last.ts; next = `waiting on ${buyer}`; }
       else { ball = 'us'; since = (d.msgs[d.msgs.length - 1] || {}).ts; next = 'review thread'; }
       const silentH = since ? (Date.now() - new Date(since).getTime()) / 3.6e6 : 0;

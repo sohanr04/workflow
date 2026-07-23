@@ -69,7 +69,9 @@ async function newBuyerEvents(sinceISO, limit = 15) {
 // of waiting for Sohan to tell Winston.
 const SUP_DOMAINS = new Set(['stockpapa.cn', 'gbestgarment.com', 'tailormax.com', 'bentagarment.com', 'wintopstock.com', 'royalgarment.cn', 'wellroyalgarment.com', 'hpromise.cn', 'yeletrading.com']);
 const isSupplierAddr = (a) => { const d = String(a || '').toLowerCase().split('@')[1] || ''; return d && (SUP_DOMAINS.has(d) || d.endsWith('.cn')); };
-const SUP_KILL = /\b(sold\s?out|already sold|is sold|been sold|^sold\b|sold[,. ]|stock (is )?gone|no (more )?stock|out of stock|cancell?ed|cannot supply|not available|no longer available)\b/i;
+// plain \bsold\b catches "Sold," / "is sold" / "been sold"; no trailing \b (it
+// breaks after a comma). Supplier "sold" ≈ always a kill; Winston verifies the thread.
+const SUP_KILL = /\bsold\b|sold\s?out|stock (is )?gone|no (more )?stock|out of stock|cancell?ed|cannot supply|not available|no longer available/i;
 
 function openRefsFrom(bookFile) {
   try { const b = JSON.parse(fs.readFileSync(bookFile, 'utf8')); return Object.entries(b.deals || {}).filter(([, d]) => !d.closed).map(([r]) => r); }

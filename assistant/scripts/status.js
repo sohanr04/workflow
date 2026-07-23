@@ -489,10 +489,11 @@ async function births(days) {
       const sig = ov.signal && !ov.signal.resolved ? ov.signal : null;
       if (!d.msgs.length) return { ref, ov, sig, tier: 'unread', ball: '?', silentH: 0, next: 'no thread found — check ref', line: true };
       const S = sideState(d.sell), B = sideState(d.buy);
-      // EXCLUDE self-sends / E2E tests: a "buyer" that resolves to one of our own
-      // addresses is a test blast, not a real inquiry — it must not pollute the list.
-      const buyerAddr = (S.lastTheirs && S.lastTheirs.from) || S.who || '';
-      if (isUs(buyerAddr) && !sig) return null;
+      // EXCLUDE self-sends / E2E tests only: the RESOLVED buyer identity (S.who,
+      // parsed out of the intent-forward) is one of our own addresses = a test blast,
+      // not a real inquiry. Use S.who, NOT the raw sender — real buyer bites are
+      // forwarded FROM districtstock@ so the raw sender is always us.
+      if (S.who && isUs(S.who) && !sig) return null;
       // LIVE ball derivation with the TWO-LEG BLOCKER rule. A buyer ping is only
       // OURS to answer if we can actually price it — i.e. the BUY leg is settled.
       // If we're still waiting on the supplier, the buyer waits downstream and the

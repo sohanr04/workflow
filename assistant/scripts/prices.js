@@ -107,6 +107,7 @@ function marginFlag(cost, sell) {
   if (!cost || !sell || !cost.val || !sell.val) return null;
   if (cost.cur !== sell.cur && cost.cur !== '?' && sell.cur !== '?') return null;
   const pct = Math.round(((sell.val - cost.val) / cost.val) * 100);
+  if (pct > 200) return null; // >200% margin = a mis-parsed number, not a real deal — don't flag
   const flag = sell.val <= cost.val ? '⛔' : pct >= 20 ? '🟢' : pct >= 15 ? '🟡' : '🔴';
   return { pct, flag };
 }

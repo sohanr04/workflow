@@ -175,10 +175,19 @@ async function readDeal(ref, tok, link = {}) {
     const counterparty = us ? tos.find((t) => !isUs(t)) || '' : (fwdWho || from);
     const side = (m.viaSupplierRef || m.box === 'china' || isSupplier(counterparty) || isSupplier(from) ||
       (link.email && (from === link.email || tos.includes(link.email)))) ? buy : sell;
+    // PRICE TEXT: on an intent-forward, ONLY the buyer's quoted words are theirs.
+    // The "Offer received from supplier … $X" footer is OUR blast price — reading
+    // it as the buyer's number is what flags every fresh bite as below-cost. Cut
+    // to just the "They said: '…'" quote so the classifier sees only their words.
+    let clsText = text;
+    if (intentForward) {
+      const q = (text.match(/They said:\s*["']?([\s\S]*?)["']?\s*(?:📅|Offer\s+re|$)/i) || [])[1];
+      clsText = q != null ? q : text.replace(/(?:📅|Offer\s+re)[\s\S]*$/i, '');
+    }
     side.push({
       ts: m.receivedDateTime, from, us, counterparty, id: m.id, mb: m.mb, box: m.box,
       subject: m.subject || '', preview: (m.bodyPreview || '').replace(/\s+/g, ' ').slice(0, 200),
-      text, // subject + preview, for the confirmed-vs-ask price classifier
+      text: clsText, // buyer's own words only (forwards), for the confirmed-vs-ask classifier
     });
   }
   return { msgs, sell, buy, supplierCode };
@@ -523,7 +532,7 @@ async function births(days) {
       // DETERMINISTIC BUCKET (Sohan's "what's open" categories) — pure from state
       let bucket;
       if (ov.needsYou) bucket = 'needs_you';
-      else if ((sig && sig.kind === 'accept') || ov.stage === 'order') bucket = 'to_raise';
+      else if ((sig && sig.kind === 'accept') || ov.toRaise) bucket = 'to_raise'; // real agreement only, not a stale stage flag
       else if (tier === 'cold' || tier === 'dormant') bucket = 'stale';
       else if (ball === 'us') bucket = fresh ? 'needs_response' : 'followup';
       else bucket = tier === 'chase_due' ? 'chase' : 'waiting';

@@ -475,12 +475,24 @@ async function births(days) {
     if (only) open = open.filter(([r]) => r.toUpperCase() === only);
     else if (limit) open = open.slice(0, limit);
     const nameOf = (s) => (s || '?').replace(/\s+is interested.*/i, '').replace(/^[^A-Za-zÀ-ÿ]*/, '').replace(/^(pieces|pcs|prs|pairs|the|for|units?)\s+/i, '').slice(0, 22);
+    // product from the blast subject ("DIS-x · Product · N pieces") when the overlay lacks it
+    const productFrom = (dd) => {
+      for (const m of [...dd.sell, ...dd.buy]) {
+        const pm = (m.subject || '').match(/·\s*([^·]+?)\s*·\s*[\d,]+\s*(?:pieces|pcs|prs|pairs|sets)/i);
+        if (pm) return pm[1].trim();
+      }
+      return '';
+    };
     const rows = (await mapPool(open, 6, async ([ref, ov]) => {
       const link = await supplierLink(ref);
       const d = await readDeal(ref, tok, link);
       const sig = ov.signal && !ov.signal.resolved ? ov.signal : null;
       if (!d.msgs.length) return { ref, ov, sig, tier: 'unread', ball: '?', silentH: 0, next: 'no thread found — check ref', line: true };
       const S = sideState(d.sell), B = sideState(d.buy);
+      // EXCLUDE self-sends / E2E tests: a "buyer" that resolves to one of our own
+      // addresses is a test blast, not a real inquiry — it must not pollute the list.
+      const buyerAddr = (S.lastTheirs && S.lastTheirs.from) || S.who || '';
+      if (isUs(buyerAddr) && !sig) return null;
       // LIVE ball derivation with the TWO-LEG BLOCKER rule. A buyer ping is only
       // OURS to answer if we can actually price it — i.e. the BUY leg is settled.
       // If we're still waiting on the supplier, the buyer waits downstream and the
@@ -537,17 +549,22 @@ async function births(days) {
       const dd = book.deals[ref]; if (dd) { dd.ball = ball === 'buyer' ? 'buyer' : ball; dd.since = since; dd.derived_at = new Date().toISOString(); }
       // DETERMINISTIC BUCKET (Sohan's "what's open" categories) — pure from state
       let bucket;
+      const belowCost = mg && mg.flag === '⛔';
       if (ov.needsYou) bucket = 'needs_you';
       else if ((sig && sig.kind === 'accept') || ov.toRaise) bucket = 'to_raise'; // real agreement only, not a stale stage flag
       else if (tier === 'cold' || tier === 'dormant') bucket = 'stale';
+      else if (ball === 'us' && belowCost) bucket = 'parked'; // buyer under cost — squeeze the supplier or drop, NOT a buyer reply
       else if (ball === 'us') bucket = fresh ? 'needs_response' : 'followup';
       else bucket = tier === 'chase_due' ? 'chase' : 'waiting';
-      const flav = (mg && mg.flag === '⛔') ? '⛔' : (fresh && !havePrice) ? '🔍' : '';
-      const sortKey = spread != null ? spread : (parseFloat(String(ov.qty || '').replace(/[^0-9.]/g, '')) || 0);
+      const flav = belowCost ? '⛔' : (fresh && !havePrice) ? '🔍' : '';
+      const prod = ov.product || productFrom(d);
+      const qm = !ov.qty ? (d.sell.concat(d.buy).map((m) => (m.subject || '').match(/·\s*([\d,]+)\s*(?:pieces|pcs|prs|pairs|sets)/i)).find(Boolean)) : null;
+      const qty = ov.qty || (qm ? qm[1] : '');
+      const sortKey = spread != null ? spread : (parseFloat(String(qty).replace(/[^0-9.]/g, '')) || 0);
       // which side is the MOVE on? factory = we owe/await the supplier, or must
       // source a cost. Else buyer-facing. Lets Sohan pull the factory list alone.
       const side = (ball === 'supplier' || (ball === 'us' && clockSide === 'supplier') || (fresh && !havePrice)) ? 'factory' : 'buyer';
-      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, mg, bucket, flav, side, sortKey, supCode: d.supplierCode || null, supEmail: link.email || (B.who && /@/.test(B.who) ? B.who : null), product: ov.product || '', qty: ov.qty || '' };
+      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, mg, bucket, flav, side, sortKey, supCode: d.supplierCode || null, supEmail: link.email || (B.who && /@/.test(B.who) ? B.who : null), product: prod || '', qty };
     })).filter(Boolean);
     try { fs.writeFileSync(bookFile, JSON.stringify(book, null, 2)); } catch { /* cache best-effort */ }
     const nSig = rows.filter((r) => r.sig).length;
@@ -571,6 +588,7 @@ async function births(days) {
       ['followup', '🔄 FOLLOW-UP — ball on us'],
       ['chase', '⏰ CHASE — ball on them, past the window'],
       ['waiting', '⏳ WAITING — ball on them, still in window'],
+      ['parked', '⛔ PARKED — buyer under cost (squeeze supplier or drop, NOT a buyer reply)'],
       ['stale', '🪦 STALE — long silence'],
     ];
     const shown = sideFilter ? rows.filter((r) => r.side === sideFilter) : rows;

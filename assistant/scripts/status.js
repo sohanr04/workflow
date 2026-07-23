@@ -468,6 +468,9 @@ async function births(days) {
     let book = {}; try { book = JSON.parse(fs.readFileSync(bookFile, 'utf8')); } catch { die('no book at ' + bookFile); }
     const only = (a1 && /^(DIS|GBT|SP|KG)/i.test(a1)) ? a1.toUpperCase() : null; // desk <ref> = one deal through the live board
     const limit = parseInt(a1, 10) || 0;                                          // desk <N> = cap the sweep
+    // desk fty|factory|supplier  → only the BUY-leg follow-ups (chase/answer/source
+    // the factory). desk buyer → only the SELL-leg. Sohan sees each side as its own list.
+    const sideFilter = /^(fty|factory|supplier|buy)$/i.test(a1 || '') ? 'factory' : /^(buyer|sell|client)$/i.test(a1 || '') ? 'buyer' : null;
     let open = Object.entries(book.deals || {}).filter(([, d]) => !d.closed);
     if (only) open = open.filter(([r]) => r.toUpperCase() === only);
     else if (limit) open = open.slice(0, limit);
@@ -539,7 +542,10 @@ async function births(days) {
       else bucket = tier === 'chase_due' ? 'chase' : 'waiting';
       const flav = (mg && mg.flag === '⛔') ? '⛔' : (fresh && !havePrice) ? '🔍' : '';
       const sortKey = spread != null ? spread : (parseFloat(String(ov.qty || '').replace(/[^0-9.]/g, '')) || 0);
-      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, mg, bucket, flav, sortKey, supCode: d.supplierCode || null, supEmail: link.email || (B.who && /@/.test(B.who) ? B.who : null), product: ov.product || '', qty: ov.qty || '' };
+      // which side is the MOVE on? factory = we owe/await the supplier, or must
+      // source a cost. Else buyer-facing. Lets Sohan pull the factory list alone.
+      const side = (ball === 'supplier' || (ball === 'us' && clockSide === 'supplier') || (fresh && !havePrice)) ? 'factory' : 'buyer';
+      return { ref, ov, sig, tier, ball, silentH, next, buyP, sellP, askP, spread, mg, bucket, flav, side, sortKey, supCode: d.supplierCode || null, supEmail: link.email || (B.who && /@/.test(B.who) ? B.who : null), product: ov.product || '', qty: ov.qty || '' };
     })).filter(Boolean);
     try { fs.writeFileSync(bookFile, JSON.stringify(book, null, 2)); } catch { /* cache best-effort */ }
     const nSig = rows.filter((r) => r.sig).length;
@@ -565,19 +571,23 @@ async function births(days) {
       ['waiting', '⏳ WAITING — ball on them, still in window'],
       ['stale', '🪦 STALE — long silence'],
     ];
-    console.log(`# WHAT'S OPEN — ${rows.length} live deals · every ball read LIVE (${day(new Date().toISOString())})`);
+    const shown = sideFilter ? rows.filter((r) => r.side === sideFilter) : rows;
+    const title = sideFilter === 'factory' ? "FACTORY FOLLOW-UPS (buy leg)" : sideFilter === 'buyer' ? "BUYER-FACING (sell leg)" : "WHAT'S OPEN";
+    console.log(`# ${title} — ${shown.length}${sideFilter ? '' : ' live'} deals · every ball read LIVE (${day(new Date().toISOString())})`);
     for (const [key, label] of BUCKETS) {
-      const rs = rows.filter((r) => r.bucket === key).sort((a, x) => (x.sortKey - a.sortKey) || (x.silentH - a.silentH));
+      const rs = shown.filter((r) => r.bucket === key).sort((a, x) => (x.sortKey - a.sortKey) || (x.silentH - a.silentH));
       if (!rs.length) continue;
       console.log(`\n${label} — ${rs.length}`);
       for (const r of rs) {
         const money = `${r.spread ? ` $${(r.spread / 1000).toFixed(1)}k` : ''}${r.mg ? ` ${r.mg.flag}${r.mg.pct}%` : ''}`;
-        const clk = ['chase', 'waiting'].includes(key) || key === 'followup' ? ` · ${fmtWD(r.silentH)}` : '';
-        const sup = r.supCode ? ` · sup ${r.supCode}` : '';
-        console.log(`  ${r.flav}${r.ref} · ${(r.product || '?').slice(0, 24)}${r.qty ? ' ' + r.qty : ''}${money}${clk} — ${r.next.replace(/@grandempirehk\.com|@gbestgarment\.com|@stockpapa\.cn/g, '').slice(0, 60)}${sup}`);
+        const clk = ['chase', 'waiting', 'followup'].includes(key) ? ` · ${fmtWD(r.silentH)}` : '';
+        const sd = sideFilter ? '' : (r.side === 'factory' ? '🏭' : '🛒'); // side marker only in the mixed view
+        const sup = (r.side === 'factory' && r.supCode) ? ` · ${r.supCode}` : '';
+        console.log(`  ${sd}${r.flav}${r.ref} · ${(r.product || '?').slice(0, 24)}${r.qty ? ' ' + r.qty : ''}${money}${clk} — ${r.next.replace(/@grandempirehk\.com|@gbestgarment\.com|@stockpapa\.cn/g, '').slice(0, 60)}${sup}`);
       }
     }
-    console.log(`\n# ${BUCKETS.map(([k, l]) => `${l.split(' ')[0]}${rows.filter((r) => r.bucket === k).length}`).join(' · ')}`);
+    const fCount = rows.filter((r) => r.side === 'factory').length;
+    console.log(`\n# ${shown.length} shown · 🏭 factory ${fCount} · 🛒 buyer ${rows.length - fCount}${sideFilter ? '' : "  (·  'desk fty' = factory list only, 'desk buyer' = buyer list only)"}`);
     return;
   }
 

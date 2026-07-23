@@ -19,6 +19,7 @@
 
 const path = require('path');
 const { loadProfile, makeLog, createClaude, startScheduler } = require('./lib/core');
+const { startEventPoller } = require('./scripts/eventpoll');
 const oc = require('./lib/openclaw');
 
 let baileys;
@@ -124,34 +125,43 @@ async function start() {
       log(`linked as ${[...selfIds].join(' / ')} — message yourself on WhatsApp to talk to the agent`);
       if (!schedulerStarted) {
         schedulerStarted = true;
+        // shared spawn→strip→send used by BOTH the cron scheduler and the event
+        // poller: enqueue a Winston turn, drop a bare HEARTBEAT_OK, send the rest.
+        const runAndSend = (prompt, opts = {}) => {
+          if (!selfJid) return;
+          enqueue(selfJid, async () => {
+            const res = await claude.runClaude(prompt, undefined);
+            if (!res.ok) {
+              if (opts.silentErrors) log(`${opts.label || 'scheduled'} run failed silently:`, res.error);
+              else await sendTo(selfJid, `Task failed: ${res.error}`);
+              return;
+            }
+            let outText = res.text;
+            if (opts.suppressIf) {
+              const { shouldSkip, text } = oc.stripSilentToken(res.text, opts.suppressIf);
+              if (shouldSkip) { log(`${opts.label || 'heartbeat'}: nothing to report`); return; }
+              outText = text;
+            }
+            if (res.notice) outText = `${res.notice}\n${outText}`;
+            await sendTo(selfJid, outText);
+          });
+        };
         startScheduler({
-          profile,
-          profileDir,
-          log,
+          profile, profileDir, log,
           sendToOwner: (text) => selfJid && sendTo(selfJid, text),
-          runScheduled: (prompt, opts = {}) => {
-            if (!selfJid) return;
-            enqueue(selfJid, async () => {
-              const res = await claude.runClaude(prompt, undefined);
-              if (!res.ok) {
-                if (opts.silentErrors) log('scheduled run failed silently:', res.error);
-                else await sendTo(selfJid, `Scheduled task failed: ${res.error}`);
-                return;
-              }
-              // OpenClaw token discipline: strip a trailing HEARTBEAT_OK and
-              // only stay silent if NOTHING meaningful remains. The old
-              // `.includes()` wrongly swallowed real reports that ended with
-              // the token ("chased Cherry. HEARTBEAT_OK").
-              let outText = res.text;
-              if (opts.suppressIf) {
-                const { shouldSkip, text } = oc.stripSilentToken(res.text, opts.suppressIf);
-                if (shouldSkip) { log('heartbeat: nothing to report'); return; }
-                outText = text;
-              }
-              if (res.notice) outText = `${res.notice}\n${outText}`;
-              await sendTo(selfJid, outText);
-            });
-          },
+          runScheduled: (prompt, opts = {}) => runAndSend(prompt, opts),
+        });
+        // Phase 5 — INSTANT updates: a buyer reply lands in the relay's
+        // buyer_events within ~60s, and Winston fires a single-deal context ping
+        // to Sohan (not the 30-min patrol, not a board re-scan).
+        startEventPoller({
+          intervalMs: 60000,
+          stateFile: path.join(profileDir, 'state', 'eventpoll.json'),
+          log,
+          onEvent: (ev) => runAndSend(
+            `INSTANT UPDATE — a buyer just replied. ${ev.buyer} on ${ev.ref} [${ev.replyType}]${ev.snippet ? `: "${ev.snippet}"` : ''}. Run \`node ../../scripts/status.js ${ev.ref}\` to read the LIVE thread, update your context (write a signal if it's an accept/drop), then text Sohan 1–2 tight lines: what just happened + whose move it is now. CONTEXT, not a price — he runs the negotiation. If there's genuinely nothing to flag, reply HEARTBEAT_OK.`,
+            { suppressIf: 'HEARTBEAT_OK', label: 'event', silentErrors: true }
+          ),
         });
       }
     }

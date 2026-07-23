@@ -525,7 +525,9 @@ async function births(days) {
       const s = scf ? scf.val : null;
       const sameCur = bc && scf ? (bc.cur === scf.cur || bc.cur === '?' || scf.cur === '?') : true;
       const q = parseFloat(ov.qty || '');
-      const spread = (b && s && q && sameCur && s > b) ? Math.round((s - b) * q) : null;
+      // sanity cap: a per-piece spread over $15 on stocklot apparel is a parse
+      // error (e.g. ZAR R40 misread as $40), not real — suppress it, don't show fake $.
+      const spread = (b && s && q && sameCur && s > b && (s - b) <= 15) ? Math.round((s - b) * q) : null;
       // margin flags (20% target / 15% floor on cost) + shape-aware moves
       const mg = marginFlag(bc || (b ? { val: b, cur: '?' } : null), scf);
       // Winston surfaces the CONTEXT, not the number — Sohan runs the negotiation.

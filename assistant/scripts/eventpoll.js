@@ -25,6 +25,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { retryFetch } = require('./_net');
+const { getToken, BOXES, graph } = require('./graph');
+const { core, supplierCodeIn } = require('./prices');
 
 function relayEnv(k) {
   const home = os.homedir();
@@ -59,23 +61,67 @@ async function newBuyerEvents(sinceISO, limit = 15) {
   })).filter((e) => e.ref && e.at);
 }
 
-// start the poll loop. onEvent(ev) → the gateway spawns a Winston turn + sends.
-function startEventPoller({ intervalMs = 60000, stateFile, onEvent, log = console.log }) {
+// ── SUPPLIER-side watcher (the other half) ───────────────────────────────────
+// Buyer replies land in buyer_events. SUPPLIER emails (Scott/Cherry saying "sold",
+// a price, a counter) do NOT — they arrive in spr@/china@ under the SP/GBT code.
+// This polls those boxes, maps the code → the DIS deal by shared core, and flags
+// KILLs ("sold", "no stock") so a factory killing stock fires instantly instead
+// of waiting for Sohan to tell Winston.
+const SUP_DOMAINS = new Set(['stockpapa.cn', 'gbestgarment.com', 'tailormax.com', 'bentagarment.com', 'wintopstock.com', 'royalgarment.cn', 'wellroyalgarment.com', 'hpromise.cn', 'yeletrading.com']);
+const isSupplierAddr = (a) => { const d = String(a || '').toLowerCase().split('@')[1] || ''; return d && (SUP_DOMAINS.has(d) || d.endsWith('.cn')); };
+const SUP_KILL = /\b(sold\s?out|already sold|is sold|been sold|^sold\b|sold[,. ]|stock (is )?gone|no (more )?stock|out of stock|cancell?ed|cannot supply|not available|no longer available)\b/i;
+
+function openRefsFrom(bookFile) {
+  try { const b = JSON.parse(fs.readFileSync(bookFile, 'utf8')); return Object.entries(b.deals || {}).filter(([, d]) => !d.closed).map(([r]) => r); }
+  catch { return []; }
+}
+
+// new supplier emails since `sinceISO` mapped to a tracked DIS deal, oldest first
+async function newSupplierEvents(sinceISO, bookFile) {
+  const openRefs = openRefsFrom(bookFile);
+  const byCore = new Map(); for (const r of openRefs) byCore.set(core(r), r);
+  const tok = await getToken();
+  const out = [];
+  for (const box of [BOXES.spr, BOXES.china].filter(Boolean)) {
+    let j;
+    try { j = await graph(`/users/${box}/messages?$select=subject,from,receivedDateTime,bodyPreview&$top=30&$orderby=receivedDateTime desc`, tok); }
+    catch { continue; }
+    for (const m of j.value || []) {
+      if (!m.receivedDateTime || m.receivedDateTime <= sinceISO) continue;
+      const from = m.from?.emailAddress?.address || '';
+      if (!isSupplierAddr(from)) continue;
+      const code = supplierCodeIn(m.subject || '', null);
+      if (!code) continue;
+      const dis = byCore.get(core(code));
+      if (!dis) continue; // supplier email for a deal we're not tracking → skip
+      const text = `${m.subject || ''} ${m.bodyPreview || ''}`;
+      out.push({ ref: dis, supplierCode: code, from, snippet: (m.bodyPreview || '').replace(/\s+/g, ' ').trim().slice(0, 200), kill: SUP_KILL.test(text), at: m.receivedDateTime });
+    }
+  }
+  // de-dupe (spr + china may both hold it) by ref+at
+  const seen = new Set();
+  return out.filter((e) => { const k = e.ref + '|' + e.at; if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => (a.at || '').localeCompare(b.at || ''));
+}
+
+// start the poll loop. `source(sinceISO)` → events with `.at`; onEvent(ev) → the
+// gateway spawns a Winston turn + sends. Used for BOTH buyer and supplier watchers.
+function startEventPoller({ intervalMs = 60000, stateFile, source, onEvent, log = console.log, label = 'event-poller' }) {
   const readCk = () => { try { return JSON.parse(fs.readFileSync(stateFile, 'utf8')).since || null; } catch { return null; } };
   const writeCk = (iso) => { try { fs.mkdirSync(path.dirname(stateFile), { recursive: true }); fs.writeFileSync(stateFile, JSON.stringify({ since: iso })); } catch { /* best effort */ } };
   let since = readCk();
-  if (!since) { since = new Date().toISOString(); writeCk(since); log(`event-poller: first run — watching for replies after ${since} (backlog skipped)`); }
+  if (!since) { since = new Date().toISOString(); writeCk(since); log(`${label}: first run — watching after ${since} (backlog skipped)`); }
   let busy = false;
   const tick = async () => {
     if (busy) return; busy = true;
     try {
-      const evs = await newBuyerEvents(since, 15);
+      const evs = await source(since);
       for (const ev of evs) {
-        try { await onEvent(ev); } catch (e) { log('event-poller: handler failed for ' + ev.ref + ': ' + (e.message || '').slice(0, 60)); }
+        try { await onEvent(ev); } catch (e) { log(`${label}: handler failed for ` + ev.ref + ': ' + (e.message || '').slice(0, 60)); }
         if (ev.at > since) { since = ev.at; writeCk(since); } // advance only past handled events
       }
-      if (evs.length) log(`event-poller: fired ${evs.length} reply update(s)`);
-    } catch (e) { log('event-poller: tick failed — ' + (e.message || '').slice(0, 80)); }
+      if (evs.length) log(`${label}: fired ${evs.length} update(s)`);
+    } catch (e) { log(`${label}: tick failed — ` + (e.message || '').slice(0, 80)); }
     finally { busy = false; }
   };
   const timer = setInterval(tick, intervalMs);
@@ -83,12 +129,22 @@ function startEventPoller({ intervalMs = 60000, stateFile, onEvent, log = consol
   return () => clearInterval(timer);
 }
 
-module.exports = { newBuyerEvents, startEventPoller, extractRef };
+module.exports = { newBuyerEvents, newSupplierEvents, startEventPoller, extractRef };
 
 // ── CLI dry-run — prints what it WOULD fire, sends nothing ───────────────────
+//   node eventpoll.js --since <iso>              # buyer replies
+//   node eventpoll.js --supplier <bookFile> [--since <iso>]  # supplier emails
 if (require.main === module) {
   const i = process.argv.indexOf('--since');
   const since = i >= 0 ? process.argv[i + 1] : new Date(Date.now() - 2 * 864e5).toISOString();
+  const si = process.argv.indexOf('--supplier');
+  if (si >= 0) {
+    newSupplierEvents(since, process.argv[si + 1] || path.join(process.cwd(), 'memory', 'book.json')).then((evs) => {
+      console.log(`# DRY-RUN (supplier) — ${evs.length} supplier email(s) since ${since} mapped to a tracked deal:\n`);
+      for (const e of evs) console.log(`  ${e.at.slice(0, 16)} · ${e.supplierCode} → ${e.ref} · ${e.from}${e.kill ? ' · ⚠️KILL' : ''} · "${e.snippet.slice(0, 70)}"`);
+    }).catch((e) => { console.error('dry-run failed:', e.message); process.exit(1); });
+    return;
+  }
   newBuyerEvents(since, 30).then((evs) => {
     console.log(`# DRY-RUN — ${evs.length} buyer repl${evs.length === 1 ? 'y' : 'ies'} since ${since} (would each fire an instant Winston update):\n`);
     for (const e of evs) console.log(`  ${e.at.slice(0, 16)} · ${e.ref} · ${e.buyer} · [${e.replyType}] "${e.snippet.slice(0, 80)}"`);

@@ -19,7 +19,7 @@
 
 const path = require('path');
 const { loadProfile, makeLog, createClaude, startScheduler } = require('./lib/core');
-const { startEventPoller } = require('./scripts/eventpoll');
+const { startEventPoller, newBuyerEvents, newSupplierEvents } = require('./scripts/eventpoll');
 const oc = require('./lib/openclaw');
 
 let baileys;
@@ -151,16 +151,28 @@ async function start() {
           sendToOwner: (text) => selfJid && sendTo(selfJid, text),
           runScheduled: (prompt, opts = {}) => runAndSend(prompt, opts),
         });
-        // Phase 5 — INSTANT updates: a buyer reply lands in the relay's
-        // buyer_events within ~60s, and Winston fires a single-deal context ping
-        // to Sohan (not the 30-min patrol, not a board re-scan).
+        // Phase 5 — INSTANT updates within ~60s, both sides of the deal.
+        const bookFile = path.join(profileDir, 'memory', 'book.json');
+        // BUYER side: a reply lands in the relay's buyer_events.
         startEventPoller({
-          intervalMs: 60000,
+          intervalMs: 60000, log, label: 'buyer-poller',
           stateFile: path.join(profileDir, 'state', 'eventpoll.json'),
-          log,
+          source: (since) => newBuyerEvents(since, 15),
           onEvent: (ev) => runAndSend(
             `INSTANT UPDATE — a buyer just replied. ${ev.buyer} on ${ev.ref} [${ev.replyType}]${ev.snippet ? `: "${ev.snippet}"` : ''}. Run \`node ../../scripts/status.js ${ev.ref}\` to read the LIVE thread, update your context (write a signal if it's an accept/drop), then text Sohan 1–2 tight lines: what just happened + whose move it is now. CONTEXT, not a price — he runs the negotiation. If there's genuinely nothing to flag, reply HEARTBEAT_OK.`,
-            { suppressIf: 'HEARTBEAT_OK', label: 'event', silentErrors: true }
+            { suppressIf: 'HEARTBEAT_OK', label: 'buyer-event', silentErrors: true }
+          ),
+        });
+        // FACTORY side: a supplier emails spr@/china@ under the SP/GBT code —
+        // mapped back to the DIS deal by shared core. Catches "sold"/kills instantly
+        // (the Scott SP83314-WY case) so Sohan never has to map it by hand.
+        startEventPoller({
+          intervalMs: 90000, log, label: 'factory-poller',
+          stateFile: path.join(profileDir, 'state', 'supplierpoll.json'),
+          source: (since) => newSupplierEvents(since, bookFile),
+          onEvent: (ev) => runAndSend(
+            `INSTANT UPDATE — the SUPPLIER emailed on ${ev.supplierCode} → deal ${ev.ref}${ev.snippet ? `: "${ev.snippet}"` : ''}.${ev.kill ? ' Looks like a KILL — stock sold/gone.' : ''} Run \`node ../../scripts/status.js ${ev.ref}\` to read the live thread (both legs), update context — if the factory KILLED the stock write a DROP signal + note (do NOT auto-close, flag it for Sohan) — then text Sohan 1–2 lines: what the factory said + what it means (dead → re-source / new cost / moving). CONTEXT, not a directive. If nothing material, HEARTBEAT_OK.`,
+            { suppressIf: 'HEARTBEAT_OK', label: 'factory-event', silentErrors: true }
           ),
         });
       }

@@ -146,14 +146,13 @@ Hard lines unchanged: never invent a number; **never auto-close** — only
 `close` on an EXPLICIT drop (buyer or Sohan says so) — Law 3.
 
 Badly-overdue deals are still the work queue (Law 3) — chase the biggest-$ ones,
-batch only the tiny long-tail so you don't spam. Refresh the Excel on the brief.
+batch only the tiny long-tail so you don't spam.
 
-The engine board (`deals.js`) is NOT your truth — one glance for unbooked deals
-at most; never nudge off it. Your book is the pipeline.
-
-`memory/deals.md` = your human-context notebook (Sohan said "hold at $2.20";
-Parker's floor; a chase draft in flight). The **book** holds the structured
-state; deals.md holds the colour.
+STATE is LIVE only — **`status.js desk` (read from the threads) is the SOLE source
+of ball/price/tier.** NEVER quote a ball/price/"overdue" from `book.js` or
+`deals.js`; that's a stale cache — the recurring "the book was wrong" bug. Need a
+deal's state? `status.js desk <ref>`. `book.json` = registry + overlay
+(signals/closes); `deals.md` = colour ("hold at $2.20"), not state.
 
 - **The hard line:** you PREP and PROMPT — never send a message, never confirm a
   price, never commit an order without explicit say-so. Parker signs prices;

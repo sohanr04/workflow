@@ -152,8 +152,11 @@ if (cmd === 'add') {
   (d.history = d.history || []).push({ ts: now(), text: args.slice(1).join(' ') }); save(b); console.log('noted.');
 } else if (cmd === 'get') {
   const b = load(); const d = b.deals[ref]; if (!d) die('no deal ' + ref);
-  console.log(`# ${ref} · ${TAG[lifecycle(d)]} · silent ${fmtH(silentH(d))} · ball ${d.ball}`);
-  console.log(JSON.stringify(d, null, 2));
+  // OVERLAY only — the ball/tier/prices below are a STALE CACHE. For live state
+  // (ball, price, whose move) run: status.js desk <ref>. Trust the thread, not this.
+  console.log(`# ${ref} — OVERLAY (signals/notes/history). ⚠️ For live ball/price run: status.js desk ${ref}`);
+  const overlay = { signal: d.signal, stage: d.stage, closed: d.closed, outcome: d.outcome, next: d.next, buyer: d.buyer, supplier: d.supplier, history: d.history };
+  console.log(JSON.stringify(overlay, null, 2));
 } else if (cmd === 'close') {
   const b = load(); const d = b.deals[ref]; if (!d) die('no deal ' + ref);
   d.closed = true; d.outcome = flag(args.slice(1), 'outcome') || 'lost';
@@ -200,44 +203,13 @@ if (cmd === 'add') {
     const k = d.signal.kind === 'accept' ? '🟢ACCEPT' : '🔴DROP ';
     console.log(`${k} ${ref} · ${(d.product || '?').slice(0, 30)}${d.qty ? ' ' + d.qty : ''} · ${d.signal.from || '?'} ${(d.signal.when || '').slice(0, 10)}: "${d.signal.phrase}"`);
   }
-} else if (cmd === 'today') {
-  const b = load();
-  const unresolved = (d) => !!(d.signal && !d.signal.resolved && !d.closed);
-  // VIABILITY: both legs + qty known and we're UNDERWATER (negative spread) →
-  // chasing the BUYER is pointless (we're below their number). It's a supplier
-  // squeeze or a park, NOT a chase. Keep it off the active list so Winston stops
-  // surfacing dead-on-price deals for Sohan to veto ("use ur brain"). A signal
-  // overrides (an accept/drop still needs action regardless of price).
-  const underwater = (d) => { const s = spread(d); return s != null && s < 0 && !unresolved(d); };
-  const all = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) }));
-  const chase = all.filter((r) => (ACTION.has(r.lc) || unresolved(r.d)) && !underwater(r.d))
-    .sort((a, x) => (unresolved(x.d) - unresolved(a.d)) || ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
-  const parked = all.filter((r) => underwater(r.d) && (ACTION.has(r.lc) || r.lc === 'waiting'))
-    .sort((a, x) => spread(a.d) - spread(x.d)); // most underwater first
-  console.log(`# WINSTON'S BOOK — ${chase.length} to chase (signals first)${parked.length ? ` · ${parked.length} parked on price` : ''}`);
-  for (const { ref, d } of chase) console.log(line(ref, d));
-  if (parked.length) {
-    console.log(`\n# 🅿️ PARKED — underwater at current prices → SUPPLIER squeeze or dead, NOT a buyer chase:`);
-    for (const { ref, d } of parked) console.log(line(ref, d) + `  [$${spread(d).toLocaleString()} — need buy ≤ ${d.sell} to clear]`);
-  }
-} else if (cmd === 'list') {
-  const b = load(); const f = ref;
-  let rows = Object.entries(b.deals).map(([ref, d]) => ({ ref, d, lc: lifecycle(d) }));
-  if (f === 'hot') rows = rows.filter((r) => ['hot', 'aging'].includes(r.lc));
-  else if (f === 'chase') rows = rows.filter((r) => r.lc === 'chase_due');
-  else if (f === 'cold') rows = rows.filter((r) => ['cold', 'dormant'].includes(r.lc));
-  else if (f === 'parked') rows = rows.filter((r) => { const s = spread(r.d); return s != null && s < 0 && !r.d.closed; });
-  else if (f && f !== 'all') rows = rows.filter((r) => r.lc === f);
-  rows.sort((a, x) => ORDER.indexOf(a.lc) - ORDER.indexOf(x.lc) || silentH(a.d) - silentH(x.d));
-  console.log(`# book${f ? ' (' + f + ')' : ''} — ${rows.length}`);
-  for (const { ref, d } of rows) console.log(line(ref, d));
-} else if (cmd === 'stats') {
-  const b = load(); const by = {}; let n = 0;
-  for (const d of Object.values(b.deals)) { const lc = lifecycle(d); by[lc] = (by[lc] || 0) + 1; n++; }
-  console.log(`# Winston's book — ${n} deals`);
-  console.log('# ' + ORDER.filter((k) => by[k]).map((k) => `${TAG[k]} ${by[k]}`).join(' · '));
+} else if (cmd === 'today' || cmd === 'list' || cmd === 'stats') {
+  // DECOMMISSIONED: these read stored ball/tier/spread = a STALE CACHE, which is
+  // the recurring "the book was wrong again" bug. State lives in the live threads.
+  console.error(`book.js ${cmd} is retired — it served a stale cache.\n→ Live board:   node ../../scripts/status.js desk\n→ Factory list: node ../../scripts/status.js desk fty\n→ One deal:     node ../../scripts/status.js desk <ref>\nbook.js is now overlay-only: signal | signals | resolve | note | close | sheet | get(overlay).`);
+  process.exit(2);
 } else if (cmd === 'sheet') {
   sheet(ref).catch((e) => die(e.message));
 } else {
-  console.log("book.js — Winston's own deal book. commands: add | set | note | get | today | list [hot|chase|cold] | signal | signals | resolve | stats | close | sheet");
+  console.log("book.js — OVERLAY store (registry + signals/notes/closes). STATE is live: status.js desk. commands: signal | signals | resolve | note | close | get(overlay) | add | set | sheet  ·  (today/list/stats retired → status.js desk)");
 }

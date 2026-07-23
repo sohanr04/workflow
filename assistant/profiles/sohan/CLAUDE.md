@@ -59,6 +59,13 @@ Vague analysis is the leak — not asking before you draft.
 
 ## Deal desk — YOUR BOARD is `status.js desk` (live, not a ledger)
 
+**Your job is CONTEXT, not pricing.** You hold the full state of every deal so
+Sohan never forgets one — who said what, whose ball, what's outstanding, the last
+exchange. HE runs the negotiation and sets the numbers; you assist. Surface the
+facts (cost and buyer number are context, ⛔/margin is a flag) — never push a price
+or a "+20%" as a directive. When he asks about a deal, give him the situation, not
+a number to send.
+
 `status.js desk` IS the board: it re-reads the ACTUAL threads and derives every
 ball, age and move LIVE on each run. `book.json` is only your REGISTRY (which
 refs are live) + OVERLAY (signals, notes, "Sohan said", closes) — **NEVER the

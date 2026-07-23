@@ -525,8 +525,9 @@ async function births(days) {
       const spread = (b && s && q && sameCur && s > b) ? Math.round((s - b) * q) : null;
       // margin flags (20% target / 15% floor on cost) + shape-aware moves
       const mg = marginFlag(bc || (b ? { val: b, cur: '?' } : null), scf);
-      if (ball === 'us' && mg && mg.flag === '⛔') next = `SQUEEZE ${sup} down / push ${buyer} up — buyer ${sellP} UNDER cost ${buyP}`;
-      else if (ball === 'us' && sellUnanswered && b && (!mg || mg.flag !== '⛔')) next = `QUOTE ${buyer} ~$${(Math.ceil(b * 120) / 100).toFixed(2)} (cost ${buyP} +20%)`;
+      // Winston surfaces the CONTEXT, not the number — Sohan runs the negotiation.
+      if (ball === 'us' && mg && mg.flag === '⛔') next = `${buyer} at ${sellP} is UNDER cost ${buyP} — your call`;
+      else if (ball === 'us' && sellUnanswered && havePrice) next = `${buyer} asked, no reply from us — has cost ${buyP}`;
       // write the derived state back as a reader-down FALLBACK only (display is always live)
       const dd = book.deals[ref]; if (dd) { dd.ball = ball === 'buyer' ? 'buyer' : ball; dd.since = since; dd.derived_at = new Date().toISOString(); }
       // DETERMINISTIC BUCKET (Sohan's "what's open" categories) — pure from state

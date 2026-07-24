@@ -78,6 +78,69 @@ function openRefsFrom(bookFile) {
   catch { return []; }
 }
 
+// Our own domains — mail FROM these is outbound, not an inbound signal to react to.
+const US_DOMAINS = ['grandempirehk.com', 'district-stock.com'];
+// exact domain OR a subdomain of it — NOT a naive endsWith (that would treat
+// notgrandempirehk.com as ours and drop it).
+const isUsAddr = (a) => { const d = String(a || '').toLowerCase().split('@')[1] || ''; return d && US_DOMAINS.some((x) => d === x || d.endsWith('.' + x)); };
+
+// ── Fast supplier-inbox watcher (all inbound on TRACKED deals) ───────────────
+// Polls spr@ + china@ every tick for supplier emails that map to a deal we're
+// already tracking — a price drop, a counter, a "sold"/kill, "samples coming".
+// This is the freshness upgrade over the old kills-only poller: it catches ANY
+// supplier reply on an open deal, both boxes, batched into one Winston turn.
+//
+// It deliberately DROPS the noise the dry-run exposed: unsolicited new-offer
+// blasts (daisy@/cherry@ firing 20 fresh catalog styles) and non-supplier spam.
+// A supplier email for a code we DON'T track is not deal context — it's the raw
+// catalog, which is the relay/lookbook's workflow, not Winston's ping. New-offer
+// DISCOVERY is a separate, deliberate feature (pass includeUnmapped:true) — not
+// bolted onto the freshness poller, or every catalog blast becomes a ping.
+// dis@ (buyer-facing) is owned by the buyer_events poller — no box double-watched.
+async function newInboxEvents(sinceISO, bookFile, { boxKeys = ['spr', 'china'], includeUnmapped = false } = {}) {
+  const openRefs = openRefsFrom(bookFile);
+  const byCore = new Map(); for (const r of openRefs) byCore.set(core(r), r);
+  const tok = await getToken();
+  const out = [];
+  for (const key of boxKeys) {
+    const box = BOXES[key];
+    if (!box) continue;
+    // NO local try/catch here: if a mailbox read fails (throws), let it propagate
+    // to the poller's tick, which logs it and does NOT advance the checkpoint —
+    // so the tick simply retries in 10s and no event is silently skipped. Catching
+    // it here and returning partial results would advance `since` past the failed
+    // box's unseen mail and lose it (only the 30-min patrol could recover it).
+    const j = await graph(`/users/${box}/messages?$select=subject,from,receivedDateTime,bodyPreview&$top=30&$orderby=receivedDateTime desc`, tok);
+    for (const m of j.value || []) {
+      if (!m.receivedDateTime || m.receivedDateTime <= sinceISO) continue;
+      const from = m.from?.emailAddress?.address || '';
+      if (!from || isUsAddr(from)) continue;   // blank-from (our own quotes) or our outbound — not a signal
+      if (!isSupplierAddr(from)) continue;      // buyer/spam/internal-forward — buyer_events owns the buyer side
+      // map on the SUBJECT first; fall back to the body preview so a bare "RE:"
+      // reply that dropped the style code from its subject still maps to its deal.
+      const code = supplierCodeIn(m.subject || '', null) || supplierCodeIn(m.bodyPreview || '', null);
+      const ref = code ? (byCore.get(core(code)) || null) : null;
+      if (!ref && !includeUnmapped) continue;   // untracked code = raw catalog noise, drop it
+      const text = `${m.subject || ''} ${m.bodyPreview || ''}`;
+      out.push({
+        box: key,
+        ref,
+        supplierCode: code || null,
+        from,
+        side: 'supplier',
+        kill: SUP_KILL.test(text),
+        unmapped: !ref,
+        snippet: (m.bodyPreview || '').replace(/\s+/g, ' ').trim().slice(0, 200),
+        at: m.receivedDateTime,
+      });
+    }
+  }
+  // de-dupe (a message can surface in both boxes / paging) by box+from+at
+  const seen = new Set();
+  return out.filter((e) => { const k = e.box + '|' + e.from + '|' + e.at; if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => (a.at || '').localeCompare(b.at || ''));
+}
+
 // new supplier emails since `sinceISO` mapped to a tracked DIS deal, oldest first
 async function newSupplierEvents(sinceISO, bookFile) {
   const openRefs = openRefsFrom(bookFile);
@@ -108,7 +171,11 @@ async function newSupplierEvents(sinceISO, bookFile) {
 
 // start the poll loop. `source(sinceISO)` → events with `.at`; onEvent(ev) → the
 // gateway spawns a Winston turn + sends. Used for BOTH buyer and supplier watchers.
-function startEventPoller({ intervalMs = 60000, stateFile, source, onEvent, log = console.log, label = 'event-poller' }) {
+// onEvent(ev): fired once per event (low-volume channels like buyer replies).
+// onBatch(evs): fired once per tick with ALL new events (high-volume inbox
+// watch) — lets the gateway collapse a burst into ONE Winston turn / ONE ping.
+// Provide exactly one. Checkpoint advances past handled events either way.
+function startEventPoller({ intervalMs = 60000, stateFile, source, onEvent, onBatch, log = console.log, label = 'event-poller' }) {
   const readCk = () => { try { return JSON.parse(fs.readFileSync(stateFile, 'utf8')).since || null; } catch { return null; } };
   const writeCk = (iso) => { try { fs.mkdirSync(path.dirname(stateFile), { recursive: true }); fs.writeFileSync(stateFile, JSON.stringify({ since: iso })); } catch { /* best effort */ } };
   let since = readCk();
@@ -118,11 +185,20 @@ function startEventPoller({ intervalMs = 60000, stateFile, source, onEvent, log 
     if (busy) return; busy = true;
     try {
       const evs = await source(since);
-      for (const ev of evs) {
-        try { await onEvent(ev); } catch (e) { log(`${label}: handler failed for ` + ev.ref + ': ' + (e.message || '').slice(0, 60)); }
-        if (ev.at > since) { since = ev.at; writeCk(since); } // advance only past handled events
+      if (!evs.length) { /* nothing new */ }
+      else if (onBatch) {
+        try { await onBatch(evs); } catch (e) { log(`${label}: batch handler failed — ` + (e.message || '').slice(0, 60)); }
+        // advance past the newest event in the batch (handled or not — the patrol is the backstop)
+        const maxAt = evs.reduce((mx, e) => (e.at > mx ? e.at : mx), since);
+        if (maxAt > since) { since = maxAt; writeCk(since); }
+        log(`${label}: fired batch of ${evs.length}`);
+      } else {
+        for (const ev of evs) {
+          try { await onEvent(ev); } catch (e) { log(`${label}: handler failed for ` + ev.ref + ': ' + (e.message || '').slice(0, 60)); }
+          if (ev.at > since) { since = ev.at; writeCk(since); } // advance only past handled events
+        }
+        log(`${label}: fired ${evs.length} update(s)`);
       }
-      if (evs.length) log(`${label}: fired ${evs.length} update(s)`);
     } catch (e) { log(`${label}: tick failed — ` + (e.message || '').slice(0, 80)); }
     finally { busy = false; }
   };
@@ -131,7 +207,7 @@ function startEventPoller({ intervalMs = 60000, stateFile, source, onEvent, log 
   return () => clearInterval(timer);
 }
 
-module.exports = { newBuyerEvents, newSupplierEvents, startEventPoller, extractRef };
+module.exports = { newBuyerEvents, newSupplierEvents, newInboxEvents, startEventPoller, extractRef };
 
 // ── CLI dry-run — prints what it WOULD fire, sends nothing ───────────────────
 //   node eventpoll.js --since <iso>              # buyer replies
@@ -139,6 +215,14 @@ module.exports = { newBuyerEvents, newSupplierEvents, startEventPoller, extractR
 if (require.main === module) {
   const i = process.argv.indexOf('--since');
   const since = i >= 0 ? process.argv[i + 1] : new Date(Date.now() - 2 * 864e5).toISOString();
+  const ii = process.argv.indexOf('--inbox');
+  if (ii >= 0) {
+    newInboxEvents(since, process.argv[ii + 1] || path.join(process.cwd(), 'memory', 'book.json')).then((evs) => {
+      console.log(`# DRY-RUN (inbox) — ${evs.length} new email(s) in spr@/china@ since ${since}:\n`);
+      for (const e of evs) console.log(`  ${e.at.slice(0, 16)} · [${e.box}] ${e.supplierCode || '—'}${e.ref ? `→${e.ref}` : ''} · ${e.from}${e.kill ? ' · ⚠️KILL' : ''}${e.unmapped ? ' · NEW?' : ''} · "${e.snippet.slice(0, 60)}"`);
+    }).catch((e) => { console.error('dry-run failed:', e.message); process.exit(1); });
+    return;
+  }
   const si = process.argv.indexOf('--supplier');
   if (si >= 0) {
     newSupplierEvents(since, process.argv[si + 1] || path.join(process.cwd(), 'memory', 'book.json')).then((evs) => {

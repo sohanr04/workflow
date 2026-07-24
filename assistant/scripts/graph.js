@@ -74,7 +74,16 @@ const CID = process.env.MS_GRAPH_CLIENT_ID || process.env.MS365_MCP_CLIENT_ID ||
 const TID = process.env.MS_GRAPH_TENANT_ID || process.env.MS365_MCP_TENANT_ID || fromRelayEnv('MS_GRAPH_TENANT_ID');
 const SECRET = process.env.MS_GRAPH_CLIENT_SECRET || process.env.MS365_MCP_CLIENT_SECRET || fromRelayEnv('MS_GRAPH_CLIENT_SECRET');
 
-function die(msg) { console.error('graph.js: ' + msg); process.exit(1); }
+// As a CLI, print + exit. As a LIBRARY (imported by status.js / eventpoll.js),
+// THROW instead — a library must never kill its host process. This is what lets
+// the WhatsApp gateway survive a transient Graph error during a poll tick
+// (the poller's tick try/catch catches the throw and simply retries next tick)
+// rather than process.exit(1) taking down WhatsApp + every poller + the scheduler.
+function die(msg) {
+  const full = 'graph.js: ' + msg;
+  if (require.main === module) { console.error(full); process.exit(1); }
+  throw new Error(full);
+}
 function resolveBox(b) {
   if (!b) die('missing mailbox (spr | china | dis)');
   // Allowlist ONLY the 3 named deal boxes. Arbitrary full-address access is

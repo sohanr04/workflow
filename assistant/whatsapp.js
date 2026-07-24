@@ -19,7 +19,7 @@
 
 const path = require('path');
 const { loadProfile, makeLog, createClaude, startScheduler } = require('./lib/core');
-const { startEventPoller, newBuyerEvents, newSupplierEvents } = require('./scripts/eventpoll');
+const { startEventPoller, newBuyerEvents, newInboxEvents } = require('./scripts/eventpoll');
 const oc = require('./lib/openclaw');
 
 let baileys;
@@ -151,11 +151,12 @@ async function start() {
           sendToOwner: (text) => selfJid && sendTo(selfJid, text),
           runScheduled: (prompt, opts = {}) => runAndSend(prompt, opts),
         });
-        // Phase 5 — INSTANT updates within ~60s, both sides of the deal.
+        // Phase 5 — INSTANT updates, both sides of the deal, so context is never stale.
         const bookFile = path.join(profileDir, 'memory', 'book.json');
-        // BUYER side: a reply lands in the relay's buyer_events.
+        // BUYER side: a reply lands in the relay's buyer_events (already classified
+        // accept/drop/counter). 20s poll — cheap Supabase read.
         startEventPoller({
-          intervalMs: 60000, log, label: 'buyer-poller',
+          intervalMs: 20000, log, label: 'buyer-poller',
           stateFile: path.join(profileDir, 'state', 'eventpoll.json'),
           source: (since) => newBuyerEvents(since, 15),
           onEvent: (ev) => runAndSend(
@@ -163,17 +164,27 @@ async function start() {
             { suppressIf: 'HEARTBEAT_OK', label: 'buyer-event', silentErrors: true }
           ),
         });
-        // FACTORY side: a supplier emails spr@/china@ under the SP/GBT code —
-        // mapped back to the DIS deal by shared core. Catches "sold"/kills instantly
-        // (the Scott SP83314-WY case) so Sohan never has to map it by hand.
+        // SUPPLIER-INBOX side: 10s watch of spr@ + china@ for ANY new inbound —
+        // price drop, counter, "sold"/kill, or a brand-new offer for an untracked
+        // code. A whole tick's emails are BATCHED into one Winston turn → one
+        // scannable ping (fresh context, never a wall of noise). This supersedes
+        // the old kills-only factory poller.
         startEventPoller({
-          intervalMs: 90000, log, label: 'factory-poller',
-          stateFile: path.join(profileDir, 'state', 'supplierpoll.json'),
-          source: (since) => newSupplierEvents(since, bookFile),
-          onEvent: (ev) => runAndSend(
-            `INSTANT UPDATE — the SUPPLIER emailed on ${ev.supplierCode} → deal ${ev.ref}${ev.snippet ? `: "${ev.snippet}"` : ''}.${ev.kill ? ' Looks like a KILL — stock sold/gone.' : ''} Run \`node ../../scripts/status.js ${ev.ref}\` to read the live thread (both legs), update context — if the factory KILLED the stock write a DROP signal + note (do NOT auto-close, flag it for Sohan) — then text Sohan 1–2 lines: what the factory said + what it means (dead → re-source / new cost / moving). CONTEXT, not a directive. If nothing material, HEARTBEAT_OK.`,
-            { suppressIf: 'HEARTBEAT_OK', label: 'factory-event', silentErrors: true }
-          ),
+          intervalMs: 10000, log, label: 'inbox-poller',
+          stateFile: path.join(profileDir, 'state', 'inboxpoll.json'),
+          source: (since) => newInboxEvents(since, bookFile),
+          onBatch: (evs) => {
+            const lines = evs.map((e) => {
+              const tag = e.kill ? ' ⚠️KILL' : e.unmapped ? ' NEW?' : '';
+              const id = e.supplierCode ? `${e.supplierCode}${e.ref ? `→${e.ref}` : ''}` : (e.ref || e.from);
+              return `• [${e.box}] ${id}${tag} — ${e.from}: "${e.snippet.slice(0, 80)}"`;
+            }).join('\n');
+            return runAndSend(
+              `INSTANT INBOX UPDATE — ${evs.length} new email(s) just landed in the supplier boxes:\n${lines}\n\n`
+              + 'For each MAPPED deal, run `node ../../scripts/status.js <ref>` to read the LIVE thread (both legs) and update context. On a KILL: write a DROP signal + note — NEVER auto-close, flag it for Sohan. On a NEW? unmapped supplier offer: surface it as a possible new deal to start tracking. Then text Sohan ONE scannable message, grouped by deal, ≤1 line each — what changed + what it means (dead→re-source / new cost / counter / new offer). CONTEXT, not a directive; Sohan runs pricing. If nothing is genuinely material, reply HEARTBEAT_OK.',
+              { suppressIf: 'HEARTBEAT_OK', label: 'inbox-event', silentErrors: true }
+            );
+          },
         });
       }
     }
